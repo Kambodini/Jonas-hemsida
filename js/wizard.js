@@ -139,11 +139,20 @@ function updateWizardTable() {
     groupMatches.forEach(m => {
         const hInp = document.getElementById(`wizHome-${m.id}`).value;
         const aInp = document.getElementById(`wizAway-${m.id}`).value;
+        
         if (hInp !== '' && aInp !== '') {
-            const h = parseInt(hInp); const a = parseInt(aInput);
-            let ht = tData[m.homeTeam]; let at = tData[m.awayTeam];
-            ht.pld++; at.pld++; ht.gd += (h-a); at.gd += (a-h);
-            if (h > a) ht.pts += 3; else if (h < a) at.pts += 3; else { ht.pts++; at.pts++; }
+            const h = parseInt(hInp); 
+            const a = parseInt(aInp); // RÄTTAD HÄR! Var aInput innan.
+            
+            let ht = tData[m.homeTeam]; 
+            let at = tData[m.awayTeam];
+            
+            ht.pld++; at.pld++; 
+            ht.gd += (h-a); at.gd += (a-h);
+            
+            if (h > a) ht.pts += 3; 
+            else if (h < a) at.pts += 3; 
+            else { ht.pts++; at.pts++; }
         }
     });
 
