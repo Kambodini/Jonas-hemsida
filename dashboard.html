@@ -68,42 +68,45 @@
         }
 
         async function fetchMatchesFromAPI() {
-            const container = document.getElementById('matches-container');
-            container.innerHTML = `<p>Databasen är tom. Hämtar färska matcher från API...</p>`;
+    const container = document.getElementById('matches-container');
+    container.innerHTML = `<p>Databasen är tom. Hämtar matcher via säker proxy...</p>`;
 
-            // ANVÄNDER EN MER PÅLITLIG PROXY
-            const targetUrl = 'https://api.football-data.org/v4/competitions/CL/matches?status=SCHEDULED';
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+    // KLISTRA IN DIN CLOUDFLARE WORKER-URL HÄR:
+    const workerUrl = 'https://vmtips-proxy.ditt-namn.workers.dev';
 
-            try {
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error('Proxy-svar var inte OK');
+    try {
+        const response = await fetch(workerUrl);
+        
+        if (!response.ok) throw new Error('Proxy-svar var inte OK');
+        
+        const data = await response.json();
 
-                const wrapper = await response.json();
-                const data = JSON.parse(wrapper.contents);
-
-                if (data.message) throw new Error(`API-fel: ${data.message}`);
-
-                const upcomingMatches = data.matches.slice(0, 3);
-                if (upcomingMatches.length === 0) {
-                    container.innerHTML = `<p>Hittade inga kommande matcher just nu.</p>`;
-                    return;
-                }
-                
-                const batch = writeBatch(db);
-                upcomingMatches.forEach(match => {
-                    const matchRef = doc(db, "matches", match.id.toString());
-                    batch.set(matchRef, match);
-                });
-                await batch.commit();
-                
-                console.log("Matcher sparade till Firestore!");
-                renderMatches(upcomingMatches);
-
-            } catch (error) {
-                container.innerHTML = `<p style="color: red;">Kunde inte hämta matcher från API. Kontrollera API-nyckeln och att du har anrop kvar. Fel: ${error.message}</p>`;
-            }
+        if (data.message || data.errorCode) {
+            throw new Error(`API-fel: ${data.message || data.errorCode}`);
         }
+
+        const upcomingMatches = data.matches.slice(0, 3);
+        if (upcomingMatches.length === 0) {
+            container.innerHTML = `<p>Hittade inga kommande matcher just nu.</p>`;
+            return;
+        }
+
+        // Spara till Firestore direkt från frontend (eftersom inloggningen hanterar säkerheten för att skriva)
+        const batch = writeBatch(db);
+        upcomingMatches.forEach(match => {
+            const matchRef = doc(db, "matches", match.id.toString());
+            batch.set(matchRef, match);
+        });
+        await batch.commit();
+        
+        console.log("Matcher hämtade via Cloudflare och sparade till Firestore!");
+        renderMatches(upcomingMatches);
+
+    } catch (error) {
+        console.error(error);
+        container.innerHTML = `<p style="color: red;">Kunde inte hämta matcher. Fel: ${error.message}</p>`;
+    }
+}
 
         function renderMatches(matches) {
             const container = document.getElementById('matches-container');
