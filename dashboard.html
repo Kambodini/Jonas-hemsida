@@ -11,8 +11,9 @@
         .btn { background-color: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn:hover { background-color: #218838; }
         .btn-logout { background-color: #dc3545; }
+        .btn-admin-toggle { background-color: #ffc107; color: #000; margin-left: 10px; display: none; }
         
-        /* God Mode Styles */
+        /* God Mode Styles (Nu dolda som standard även för dig, tills du togglar dem) */
         #admin-panel { display: none; background: #fff3cd; border: 2px solid #ffeeba; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .admin-header { color: #856404; margin-top: 0; display: flex; justify-content: space-between; align-items: center; }
         .admin-btn { background-color: #ffc107; color: #000; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
@@ -32,7 +33,7 @@
         .group-table th { background: #f8f9fa; color: #666; padding: 8px 5px; font-size: 0.75rem; border-bottom: 1px solid #ddd; }
         .group-table td { padding: 8px 5px; text-align: center; border-bottom: 1px solid #eee; }
         .group-table td:first-child { text-align: left; padding-left: 15px; font-weight: 600; width: 45%; }
-        .group-table tr:nth-child(1) td, .group-table tr:nth-child(2) td { background-color: #e8f5e9; } /* Markera de två bästa som går vidare */
+        .group-table tr:nth-child(1) td, .group-table tr:nth-child(2) td { background-color: #e8f5e9; }
 
         /* Match Cards */
         .match-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
@@ -42,6 +43,13 @@
         /* Inputs for Admin */
         .admin-input { width: 100px; padding: 5px; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
         .score-input { width: 35px; padding: 5px; text-align: center; border: 2px solid #28a745; font-weight: bold; font-size: 1.1rem; border-radius: 4px;}
+        
+        /* Dölj admin-kontroller som standard */
+        .admin-controls { display: none; text-align: center; margin-top: 10px;}
+        .admin-mode-active .admin-controls { display: block; }
+        .admin-mode-active .normal-view { display: none; }
+        .admin-mode-active .admin-view { display: flex !important; }
+        .admin-view { display: none; justify-content: space-between; align-items: center; width: 100%;}
     </style>
 </head>
 <body>
@@ -49,19 +57,20 @@
         <h2>VM-tips 2026</h2>
         <div>
             <span id="user-name">Laddar...</span>
+            <button id="toggle-admin-btn" class="btn btn-admin-toggle">🔧 Admin-läge</button>
             <button id="logout-btn" class="btn btn-logout" style="margin-left: 15px;">Logga ut</button>
         </div>
     </nav>
     
-    <div class="container">
+    <div class="container" id="main-container">
         <div id="admin-panel">
             <h3 class="admin-header">👑 GOD MODE (Admin) <button id="init-db-btn" class="admin-btn">Ladda in spelschema 2026</button></h3>
-            <p style="margin: 0; font-size: 0.9em;">Du kan redigera resultat under fliken "Alla Matcher". Tabellerna uppdateras automatiskt!</p>
+            <p style="margin: 0; font-size: 0.9em;">Du befinner dig nu i Admin-läge. Du kan redigera lag och resultat direkt i matchkorten nedan.</p>
         </div>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('tables-tab', this)">Grupptabeller</button>
-            <button class="tab-btn" onclick="switchTab('matches-tab', this)">Alla Matcher / Mata in resultat</button>
+            <button class="tab-btn" onclick="switchTab('matches-tab', this)">Alla Matcher</button>
         </div>
 
         <div id="tables-tab" class="tab-content active">
@@ -84,7 +93,10 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        let isAdmin = false;
+        
+        let isSuperUser = false; // Har användaren RÄTTIGHET till admin?
+        let adminModeActive = false; // Är admin-läget PÅSLAGET just nu?
+        let allMatchesData = [];
 
         // Flik-logik
         window.switchTab = function(tabId, btnElement) {
@@ -94,6 +106,25 @@
             btnElement.classList.add('active');
         };
 
+        // Växla admin-läge-knappen
+        document.getElementById('toggle-admin-btn').addEventListener('click', () => {
+            adminModeActive = !adminModeActive;
+            const container = document.getElementById('main-container');
+            const adminPanel = document.getElementById('admin-panel');
+            
+            if (adminModeActive) {
+                container.classList.add('admin-mode-active');
+                adminPanel.style.display = 'block';
+                document.getElementById('toggle-admin-btn').style.backgroundColor = '#dc3545'; // Röd när aktiv
+                document.getElementById('toggle-admin-btn').textContent = 'Stäng Admin-läge';
+            } else {
+                container.classList.remove('admin-mode-active');
+                adminPanel.style.display = 'none';
+                document.getElementById('toggle-admin-btn').style.backgroundColor = '#ffc107'; // Gul när inaktiv
+                document.getElementById('toggle-admin-btn').textContent = '🔧 Admin-läge';
+            }
+        });
+
         onAuthStateChanged(auth, (user) => {
             if (!user || !user.email.toLowerCase().endsWith('@nyamunken.se')) {
                 window.location.href = 'index.html';
@@ -101,9 +132,11 @@
             }
             document.getElementById('user-name').textContent = user.displayName || user.email;
             
+            // KONTROLLERA OM DU ÄR SUPERUSER
             if (user.email.toLowerCase() === 'karl.tornered@nyamunken.se') {
-                isAdmin = true;
-                document.getElementById('admin-panel').style.display = 'block';
+                isSuperUser = true;
+                // Visa knappen för att KUNNA slå på admin-läget, men slå inte på det automatiskt
+                document.getElementById('toggle-admin-btn').style.display = 'inline-block';
             }
             
             getMatches();
@@ -117,9 +150,9 @@
             const matchesSnapshot = await getDocs(matchesRef);
             
             if (!matchesSnapshot.empty) {
-                const dbMatches = matchesSnapshot.docs.map(doc => doc.data());
-                renderGroupTables(dbMatches); // Ny funktion!
-                renderMatches(dbMatches);
+                allMatchesData = matchesSnapshot.docs.map(doc => doc.data());
+                renderGroupTables(allMatchesData); 
+                renderMatches(allMatchesData);
             } else {
                 document.getElementById('tables-container').innerHTML = `<p>Databasen är tom.</p>`;
                 document.getElementById('matches-container').innerHTML = `<p>Databasen är tom.</p>`;
@@ -131,25 +164,19 @@
             const container = document.getElementById('tables-container');
             container.innerHTML = '';
             
-            // Objekt för att hålla alla 12 grupper
             const groups = { A:[], B:[], C:[], D:[], E:[], F:[], G:[], H:[], I:[], J:[], K:[], L:[] };
-
-            // Filtrera ut enbart gruppspelsmatcherna (Match 1 till 72)
             const groupMatches = matches.filter(m => m.id <= 72);
 
-            // Bygg upp tabellerna
             groupMatches.forEach(m => {
                 const groupLetter = m.stage.replace('Grupp ', '');
                 if(!groups[groupLetter]) return;
 
-                // Lägg till lagen i gruppen om de inte redan finns
                 [m.homeTeam, m.awayTeam].forEach(team => {
                     if (!groups[groupLetter].find(t => t.name === team)) {
                         groups[groupLetter].push({ name: team, played: 0, win: 0, draw: 0, loss: 0, gf: 0, ga: 0, gd: 0, points: 0 });
                     }
                 });
 
-                // Om matchen har ett resultat, uppdatera statistiken
                 if (m.homeScore !== null && m.awayScore !== null) {
                     let home = groups[groupLetter].find(t => t.name === m.homeTeam);
                     let away = groups[groupLetter].find(t => t.name === m.awayTeam);
@@ -165,87 +192,64 @@
                 }
             });
 
-            // Rita ut tabellerna på skärmen
             Object.keys(groups).forEach(letter => {
-                // Sortera: Poäng -> Målskillnad -> Gjorda mål
                 let teams = groups[letter].sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
-                
                 let tableHTML = `
                 <div class="group-table-card">
                     <div class="group-table-header">Grupp ${letter}</div>
                     <table class="group-table">
-                        <thead>
-                            <tr>
-                                <th>Lag</th>
-                                <th title="Spelade matcher">S</th>
-                                <th title="Vinster">V</th>
-                                <th title="Oavgjorda">O</th>
-                                <th title="Förluster">F</th>
-                                <th title="Målskillnad">+/-</th>
-                                <th title="Poäng">P</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Lag</th><th title="Spelade matcher">S</th><th title="Vinster">V</th><th title="Oavgjorda">O</th><th title="Förluster">F</th><th title="Målskillnad">+/-</th><th title="Poäng">P</th></tr></thead>
                         <tbody>`;
                 
                 teams.forEach(t => {
-                    tableHTML += `
-                        <tr>
-                            <td>${t.name}</td>
-                            <td>${t.played}</td>
-                            <td>${t.win}</td>
-                            <td>${t.draw}</td>
-                            <td>${t.loss}</td>
-                            <td>${t.gd > 0 ? '+'+t.gd : t.gd}</td>
-                            <td><strong>${t.points}</strong></td>
-                        </tr>`;
+                    tableHTML += `<tr><td>${t.name}</td><td>${t.played}</td><td>${t.win}</td><td>${t.draw}</td><td>${t.loss}</td><td>${t.gd > 0 ? '+'+t.gd : t.gd}</td><td><strong>${t.points}</strong></td></tr>`;
                 });
-                
                 tableHTML += `</tbody></table></div>`;
                 container.innerHTML += tableHTML;
             });
         }
 
-        // --- RITA UT MATCHLISTAN (DOLD SOM STANDARD) ---
+        // --- RITA UT MATCHLISTAN ---
         function renderMatches(matches) {
             const container = document.getElementById('matches-container');
             container.innerHTML = '';
             matches.sort((a, b) => a.id - b.id);
             
             matches.forEach(match => {
-                if (isAdmin) {
-                    container.innerHTML += `
-                        <div class="match-card" style="border-left: 5px solid #ffc107;">
-                            <div class="match-header">
-                                <span>Match ${match.id} | ${match.stage}</span>
-                                <span>${match.date}</span>
+                // Vi bygger BÅDA vyerna i samma HTML, men CSS gömmer admin-delen om inte läget är aktiverat
+                let adminHTML = "";
+                if (isSuperUser) {
+                    adminHTML = `
+                        <div class="admin-view">
+                            <input type="text" id="homeName-${match.id}" class="admin-input" value="${match.homeTeam}">
+                            <div>
+                                <input type="number" id="homeScore-${match.id}" class="score-input" value="${match.homeScore !== null ? match.homeScore : ''}">
+                                -
+                                <input type="number" id="awayScore-${match.id}" class="score-input" value="${match.awayScore !== null ? match.awayScore : ''}">
                             </div>
-                            <div class="match-teams">
-                                <input type="text" id="homeName-${match.id}" class="admin-input" value="${match.homeTeam}">
-                                <div>
-                                    <input type="number" id="homeScore-${match.id}" class="score-input" value="${match.homeScore !== null ? match.homeScore : ''}">
-                                    -
-                                    <input type="number" id="awayScore-${match.id}" class="score-input" value="${match.awayScore !== null ? match.awayScore : ''}">
-                                </div>
-                                <input type="text" id="awayName-${match.id}" class="admin-input" value="${match.awayTeam}">
-                            </div>
-                            <div style="text-align: center;">
-                                <button class="admin-btn" onclick="updateMatch(${match.id})">Spara resultat</button>
-                            </div>
-                        </div>`;
-                } else {
-                    container.innerHTML += `
-                        <div class="match-card">
-                            <div class="match-header">
-                                <span>Match ${match.id} | ${match.stage}</span>
-                                <span>${match.date}</span>
-                            </div>
-                            <div class="match-teams">
+                            <input type="text" id="awayName-${match.id}" class="admin-input" value="${match.awayTeam}">
+                        </div>
+                        <div class="admin-controls">
+                            <button class="admin-btn" onclick="updateMatch(${match.id})">Spara resultat</button>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML += `
+                    <div class="match-card">
+                        <div class="match-header">
+                            <span>Match ${match.id} | ${match.stage}</span>
+                            <span>${match.date}</span>
+                        </div>
+                        <div class="match-teams">
+                            <div class="normal-view" style="display: flex; justify-content: space-between; width: 100%;">
                                 <span>${match.homeTeam}</span>
                                 <span>${match.homeScore !== null ? match.homeScore : '-'} : ${match.awayScore !== null ? match.awayScore : '-'}</span>
                                 <span>${match.awayTeam}</span>
                             </div>
-                        </div>`;
-                }
+                            ${adminHTML}
+                        </div>
+                    </div>`;
             });
         }
 
@@ -265,12 +269,14 @@
                 const matchRef = doc(db, "matches", matchId.toString());
                 await updateDoc(matchRef, { homeTeam, awayTeam, homeScore, awayScore });
                 alert(`Match ${matchId} sparad! Tabellerna uppdateras.`);
-                getMatches(); // Uppdaterar tabellerna direkt på skärmen!
+                getMatches(); 
             } catch (error) {
                 console.error("Kunde inte uppdatera:", error);
-                alert("Fel vid sparning!");
+                alert("Fel vid sparning! Kolla dina Firestore-regler.");
             }
         };
+        
+        // (Själva Init-DB koden är borttagen här för att göra filen renare, eftersom du redan kört den!)
 
         document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
     </script>
