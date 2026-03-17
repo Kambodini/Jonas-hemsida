@@ -3,117 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VM-tips 2026 - Nya Munken</title>
+    <title>VM-tips 2026 - Logga in</title>
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0;
-            background-color: #f0f2f5; 
-        }
-        .login-card { 
-            background: white; 
-            padding: 2.5rem 2rem; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-        }
-        h1 { margin-top: 0; color: #333; }
-        .btn-google { 
-            background-color: #4285F4; 
-            color: white; 
-            border: none; 
-            padding: 12px 24px; 
-            font-size: 16px; 
-            font-weight: bold;
-            border-radius: 6px; 
-            cursor: pointer; 
-            transition: background-color 0.2s;
-            width: 100%;
-            margin-top: 20px;
-        }
-        .btn-google:hover { background-color: #357ae8; }
-        #error-message { 
-            color: #d93025; 
-            margin-top: 15px; 
-            font-size: 14px;
-            display: none; 
-            background: #fce8e6;
-            padding: 10px;
-            border-radius: 4px;
-        }
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f2f5; }
+        .login-card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 350px; }
+        .btn-google { background-color: #4285F4; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 20px; }
+        #error-message { color: #d93025; margin-top: 15px; display: none; font-size: 14px; }
     </style>
 </head>
 <body>
-
     <div class="login-card">
         <h1>VM-tips 2026 🏆</h1>
-        <p>Logga in för att lägga dina tipsrader.</p>
-        
+        <p>Nya Munken Intern-tips</p>
         <button id="login-btn" class="btn-google">Logga in med Google</button>
-        <div id="error-message">Du måste använda en @nyamunken.se e-postadress för att logga in.</div>
+        <div id="error-message"></div>
     </div>
 
-    <!-- Firebase SDK (Modular v12.10.0) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { firebaseConfig } from './config.js';
 
-        // Din Firebase-konfiguration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAwhpoNdvc9tbc5Ee0owBApxiXW4X8-HS0",
-            authDomain: "jonas-hemsida.firebaseapp.com",
-            projectId: "jonas-hemsida",
-            storageBucket: "jonas-hemsida.firebasestorage.app",
-            messagingSenderId: "65137999270",
-            appId: "1:65137999270:web:f76cc4968956cc4e7f6367",
-            measurementId: "G-P68P0EXRJV"
-        };
-
-        // Initiera Firebase
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
-        
-        // Tvinga Googles inloggningsfönster att prioritera nyamunken.se
-        provider.setCustomParameters({
-            hd: 'nyamunken.se'
-        });
+        provider.setCustomParameters({ hd: 'nyamunken.se' });
 
         document.getElementById('login-btn').addEventListener('click', () => {
             const errorMsg = document.getElementById('error-message');
-            errorMsg.style.display = 'none';
-
-            signInWithPopup(auth, provider)
-                .then((result) => {
-                    const user = result.user;
-                    
-                    // Klient-side kontroll att domänen stämmer
-                    if (user.email && user.email.endsWith('@nyamunken.se')) {
-                        // Rätt domän! Skicka vidare till dashboarden
-                        window.location.href = 'dashboard.html';
-                    } else {
-                        // Fel domän - logga ut användaren direkt och visa felmeddelande
-                        signOut(auth).then(() => {
-                            errorMsg.textContent = "Du måste använda en @nyamunken.se e-postadress för att logga in.";
-                            errorMsg.style.display = 'block';
-                        });
-                    }
-                }).catch((error) => {
-                    console.error("Inloggningsfel:", error.message);
-                    // Visa felmeddelande om det inte beror på att användaren stängde popupen
-                    if(error.code !== 'auth/popup-closed-by-user') {
-                         errorMsg.textContent = "Ett fel uppstod: " + error.message;
-                         errorMsg.style.display = 'block';
-                    }
-                });
+            signInWithPopup(auth, provider).then((result) => {
+                if (result.user.email.toLowerCase().endsWith('@nyamunken.se')) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    signOut(auth).then(() => {
+                        errorMsg.textContent = "Endast @nyamunken.se tillåts.";
+                        errorMsg.style.display = 'block';
+                    });
+                }
+            }).catch((error) => { console.error(error); });
         });
     </script>
 </body>
