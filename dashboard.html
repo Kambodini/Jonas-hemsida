@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - VM-tips 2026</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0;
+            background-color: #f0f2f5; 
+            color: #333;
+        }
+        .navbar {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .alert-box {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            display: none; /* Döljs som standard, visas via JS */
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn:hover { background-color: #218838; }
+        .btn-logout { background-color: #dc3545; }
+        .btn-logout:hover { background-color: #c82333; }
+        
+        .match-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .match-header {
+            text-align: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        .live-badge {
+            background-color: #dc3545;
+            color: white;
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .colleague-tips {
+            margin-top: 1.5rem;
+            border-top: 1px solid #eee;
+            padding-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <h2>VM-tips 2026</h2>
+        <div>
+            <span id="user-name">Laddar...</span>
+            <button id="logout-btn" class="btn btn-logout" style="margin-left: 15px;">Logga ut</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Varning om tips saknas -->
+        <div id="missing-tips-alert" class="alert-box">
+            <span><strong>Dags att tippa!</strong> Du har inte lagt in dina tips för mästerskapet ännu.</span>
+            <button class="btn">Lägg mina tips</button>
+        </div>
+
+        <!-- Nästa / Pågående match -->
+        <div class="match-card">
+            <div class="match-header">
+                <span class="live-badge" id="match-status">LIVE</span>
+                <p style="margin: 5px 0; color: #666;">Champions League (Testmatch)</p>
+            </div>
+            
+            <div class="score-board">
+                <div id="team-home">Hemmalag</div>
+                <div id="match-score">0 - 0</div>
+                <div id="team-away">Bortalag</div>
+            </div>
+
+            <div class="colleague-tips">
+                <h3>Kollegornas tips</h3>
+                <div id="tips-list">
+                    <!-- Fylls på via JavaScript från databasen -->
+                    <p><em>Laddar tips...</em></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (Modular v12.10.0) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwhpoNdvc9tbc5Ee0owBApxiXW4X8-HS0",
+            authDomain: "jonas-hemsida.firebaseapp.com",
+            projectId: "jonas-hemsida",
+            storageBucket: "jonas-hemsida.firebasestorage.app",
+            messagingSenderId: "65137999270",
+            appId: "1:65137999270:web:f76cc4968956cc4e7f6367"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // 1. KONTROLLERA INLOGGNING
+        onAuthStateChanged(auth, async (user) => {
+            if (!user || !user.email.endsWith('@nyamunken.se')) {
+                // Ingen användare inloggad eller fel domän -> Skicka till index
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Uppdatera UI med användarens namn
+            document.getElementById('user-name').textContent = user.displayName || user.email;
+
+            // 2. KONTROLLERA OM ANVÄNDAREN HAR LAGT SINA TIPS
+            // Vi letar efter ett dokument i Firestore under 'userTips' med användarens UID
+            const tipsRef = doc(db, "userTips", user.uid);
+            const tipsSnap = await getDoc(tipsRef);
+
+            if (!tipsSnap.exists()) {
+                document.getElementById('missing-tips-alert').style.display = 'flex';
+            }
+
+            // 3. HÄMTA TESTMATCH (API-anrop)
+            fetchLiveMatch();
+        });
+
+        // Hämta API-data (Byt ut mot din API-nyckel senare)
+        async function fetchLiveMatch() {
+            // OBS: Detta är ett exempel på hur anropet ser ut.
+            // Du behöver registrera dig för ett API, t.ex. API-Football eller liknande.
+            const apiUrl = 'DIN_API_URL_HÄR'; 
+            const apiKey = 'DIN_API_NYCKEL_HÄR';
+
+            try {
+                /* Avkommentera när du har din API-nyckel
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'x-rapidapi-key': apiKey,
+                        'x-rapidapi-host': 'api-football-v1.p.rapidapi.com'
+                    }
+                });
+                const data = await response.json();
+                */
+                
+                // MOCK DATA: Låtsas att vi hämtat PSG vs Bayern München
+                const mockData = {
+                    homeTeam: "PSG",
+                    awayTeam: "Bayern München",
+                    scoreHome: 1,
+                    scoreAway: 2,
+                    status: "LIVE (67')"
+                };
+
+                // Uppdatera UI
+                document.getElementById('team-home').textContent = mockData.homeTeam;
+                document.getElementById('team-away').textContent = mockData.awayTeam;
+                document.getElementById('match-score').textContent = `${mockData.scoreHome} - ${mockData.scoreAway}`;
+                document.getElementById('match-status').textContent = mockData.status;
+
+                // MOCK DATA: Kollegornas tips (Hämtas senare från Firestore)
+                document.getElementById('tips-list').innerHTML = `
+                    <p><strong>Anna:</strong> 2-2</p>
+                    <p><strong>Erik:</strong> 1-3</p>
+                    <p><strong>Du:</strong> Inget tips lagt</p>
+                `;
+
+            } catch (error) {
+                console.error("Kunde inte hämta matchdata:", error);
+            }
+        }
+
+        // LOGGA UT-FUNKTION
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            signOut(auth).then(() => {
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>
