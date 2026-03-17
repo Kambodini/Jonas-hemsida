@@ -89,11 +89,18 @@
         .tip-group {
             margin-bottom: 5px;
         }
-        /* Styling för hover-effekten på 'm.fl.' */
         .tooltip-text {
             text-decoration: underline dotted;
             cursor: help;
             color: #0056b3;
+        }
+        .error-screen {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -107,7 +114,7 @@
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container" id="main-content">
         <h3>Kommande Matcher (Champions League Test)</h3>
         <div id="matches-container">
             <p>Laddar matcher från API...</p>
@@ -121,7 +128,7 @@
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "362dbf4c4cbd4a4dab2fad63440d0000",
+            apiKey: "AIzaSyAwhpoNdvc9tbc5Ee0owBApxiXW4X8-HS0",
             authDomain: "jonas-hemsida.firebaseapp.com",
             projectId: "jonas-hemsida",
             storageBucket: "jonas-hemsida.firebasestorage.app",
@@ -133,52 +140,78 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // KONTROLLERA INLOGGNING
+        // KONTROLLERA INLOGGNING (Nu med felsökningsläge!)
         onAuthStateChanged(auth, (user) => {
-            if (!user || !user.email.endsWith('@nyamunken.se')) {
-                window.location.href = 'index.html';
+            console.log("Auth-kontroll triggades. Användare:", user); // Skriver ut i DevTools (F12)
+
+            const mainContent = document.getElementById('main-content');
+
+            if (!user) {
+                mainContent.innerHTML = `
+                    <div class="error-screen">
+                        <h2>🕵️‍♂️ Tappad inloggning!</h2>
+                        <p>Firebase känner inte av att någon är inloggad på denna sida.</p>
+                        <p><i>Kör du i inkognitoläge? Webbläsaren kan ha raderat inloggningen vid sidbytet.</i></p>
+                        <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; margin-top: 15px;">Gå tillbaka till inloggningen</a>
+                    </div>
+                `;
                 return;
             }
+
+            // Använd toLowerCase() för att undvika problem med stora/små bokstäver
+            if (!user.email.toLowerCase().endsWith('@nyamunken.se')) {
+                mainContent.innerHTML = `
+                    <div class="error-screen">
+                        <h2>❌ Fel domän!</h2>
+                        <p>Du är inloggad som <strong>${user.email}</strong>, men vi kräver @nyamunken.se.</p>
+                        <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; margin-top: 15px;">Gå tillbaka och logga ut</a>
+                    </div>
+                `;
+                return;
+            }
+
+            // Allt är grönt! Fortsätt som vanligt.
             document.getElementById('user-name').textContent = user.displayName || user.email;
-            
-            // Hämta matcher när vi vet att användaren är inloggad
             fetchUpcomingMatches();
         });
 
         // HÄMTA MATCHER FRÅN API
         async function fetchUpcomingMatches() {
-            // TODO: KLISTRA IN DIN API-NYCKEL HÄR
-            const apiKey = 'DIN_API_NYCKEL_HÄR'; 
+            // TODO: KLISTRA IN DIN API-NYCKEL HÄR IGEN!
+            const apiKey = '362dbf4c4cbd4a4dab2fad63440d0000'; 
             
-            // Ett proxy-anrop används ofta på frontend för att undvika CORS-problem med football-data
-            // Om API:et strular i webbläsaren, hojta till!
-            const apiUrl = 'https://api.football-data.org/v4/competitions/CL/matches?status=SCHEDULED';
+            // Vi använder en CORS-proxy för att lura API:et att vi inte anropar från en webbläsare
+            const targetUrl = 'https://api.football-data.org/v4/competitions/CL/matches?status=SCHEDULED';
+            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
 
             try {
-                const response = await fetch(apiUrl, {
+                const response = await fetch(proxyUrl, {
                     headers: { 'X-Auth-Token': apiKey }
                 });
                 
-                if (!response.ok) throw new Error('Kunde inte hämta data');
+                if (!response.ok) throw new Error(`API svarade med status: ${response.status}`);
                 const data = await response.json();
                 
-                // Plocka ut de 3 första matcherna
-                const nextThreeMatches = data.matches.slice(0, 3);
-                renderMatches(nextThreeMatches);
+                // Plocka ut de 3 första matcherna (om det finns några schemalagda)
+                if(data.matches && data.matches.length > 0) {
+                    const nextThreeMatches = data.matches.slice(0, 3);
+                    renderMatches(nextThreeMatches);
+                } else {
+                    document.getElementById('matches-container').innerHTML = `<p>Hittade inga kommande matcher just nu.</p>`;
+                }
 
             } catch (error) {
                 console.error("API-fel:", error);
                 document.getElementById('matches-container').innerHTML = 
-                    `<p style="color: red;">Kunde inte ladda matcher. Har du lagt in API-nyckeln?</p>`;
+                    `<p style="color: red;">Kunde inte ladda matcher. Kolla konsolen (F12) för detaljer. Felmeddelande: ${error.message}</p>`;
             }
         }
 
         // RITA UT MATCHER OCH TIPS
         function renderMatches(matches) {
             const container = document.getElementById('matches-container');
-            container.innerHTML = ''; // Rensa "Laddar..."
+            container.innerHTML = ''; 
 
-            // Låtsas-data för kollegornas tips (detta hämtar vi från Firestore i nästa steg)
             const mockTipsData = [
                 { user: 'Stefan', home: 2, away: 1 },
                 { user: 'Lars', home: 2, away: 1 },
@@ -188,7 +221,6 @@
             ];
 
             matches.forEach(match => {
-                // Formatera datumet snyggt
                 const matchDate = new Date(match.utcDate).toLocaleString('sv-SE', {
                     weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'
                 });
@@ -224,7 +256,6 @@
         function formatGroupedTips(tipsArray) {
             const grouped = {};
             
-            // Gruppera efter resultat (t.ex. "2-1")
             tipsArray.forEach(tip => {
                 const resultStr = `${tip.home}-${tip.away}`;
                 if (!grouped[resultStr]) grouped[resultStr] = [];
@@ -232,15 +263,12 @@
             });
 
             let html = '';
-            // Gå igenom grupperna och skapa HTML
             for (const [result, users] of Object.entries(grouped)) {
                 if (users.length <= 2) {
-                    // 1 eller 2 personer: Visa namnen direkt
                     html += `<div class="tip-group"><strong>${result}:</strong> ${users.join(', ')}</div>`;
                 } else {
-                    // Fler än 2 personer: Visa de två första + "m.fl." med en hover-effekt
                     const visibleUsers = users.slice(0, 2).join(', ');
-                    const allUsers = users.join(', '); // Det som visas när man hovrar
+                    const allUsers = users.join(', '); 
                     html += `
                         <div class="tip-group">
                             <strong>${result}:</strong> ${visibleUsers} 
@@ -252,7 +280,7 @@
             return html || '<p>Inga tips lagda ännu.</p>';
         }
 
-        // SPARA TIPS (Förberedd funktion för Firebase)
+        // SPARA TIPS (Lokal testfunktion)
         window.saveTip = async function(matchId) {
             const homeGoals = document.getElementById(`home-${matchId}`).value;
             const awayGoals = document.getElementById(`away-${matchId}`).value;
@@ -262,8 +290,7 @@
                 return;
             }
 
-            alert(`Ditt tips ${homeGoals}-${awayGoals} är sparat lokalt! Nästa steg är att skicka detta till Firebase.`);
-            // Här lägger vi in logiken för att skriva till databasen i nästa steg!
+            alert(`Ditt tips ${homeGoals}-${awayGoals} är sparat lokalt!`);
         };
 
         // LOGGA UT
