@@ -9,5 +9,3 @@ export const firebaseConfig = {
     measurementId: "G-P68P0EXRJV"
 };
 
-// API Nycklar
-export const FOOTBALL_API_KEY = '362dbf4c4cbd4a4dab2fad63440d0000';
