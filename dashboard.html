@@ -39,7 +39,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-        import { firebaseConfig, FOOTBALL_API_KEY } from './config.js';
+        
+        // FOOTBALL_API_KEY är borttagen härifrån
+        import { firebaseConfig } from './config.js';
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -57,61 +59,64 @@
         async function getMatches() {
             const matchesRef = collection(db, "matches");
             const matchesSnapshot = await getDocs(matchesRef);
+            
             if (!matchesSnapshot.empty) {
                 console.log("Hämtade matcher från Firestore!");
                 const dbMatches = matchesSnapshot.docs.map(doc => doc.data());
                 renderMatches(dbMatches);
             } else {
-                console.log("Databasen är tom. Anropar API...");
+                console.log("Databasen är tom. Anropar Cloudflare Proxy...");
                 fetchMatchesFromAPI();
             }
         }
 
         async function fetchMatchesFromAPI() {
-    const container = document.getElementById('matches-container');
-    container.innerHTML = `<p>Databasen är tom. Hämtar matcher via säker proxy...</p>`;
+            const container = document.getElementById('matches-container');
+            container.innerHTML = `<p>Databasen är tom. Hämtar matcher via säker proxy...</p>`;
 
-    // KLISTRA IN DIN CLOUDFLARE WORKER-URL HÄR:
-    const workerUrl = 'https://vmtips-proxy.ditt-namn.workers.dev';
+            // Din riktiga Cloudflare Worker-URL
+            const workerUrl = 'https://vmtips-proxy.karl-tornered.workers.dev/';
 
-    try {
-        const response = await fetch(workerUrl);
-        
-        if (!response.ok) throw new Error('Proxy-svar var inte OK');
-        
-        const data = await response.json();
+            try {
+                const response = await fetch(workerUrl);
+                
+                if (!response.ok) throw new Error('Proxy-svar var inte OK');
+                
+                const data = await response.json();
 
-        if (data.message || data.errorCode) {
-            throw new Error(`API-fel: ${data.message || data.errorCode}`);
+                if (data.message || data.errorCode) {
+                    throw new Error(`API-fel: ${data.message || data.errorCode}`);
+                }
+
+                const upcomingMatches = data.matches.slice(0, 3);
+                
+                if (upcomingMatches.length === 0) {
+                    container.innerHTML = `<p>Hittade inga kommande matcher just nu.</p>`;
+                    return;
+                }
+
+                const batch = writeBatch(db);
+                upcomingMatches.forEach(match => {
+                    const matchRef = doc(db, "matches", match.id.toString());
+                    batch.set(matchRef, match);
+                });
+                await batch.commit();
+                
+                console.log("Matcher hämtade via Cloudflare och sparade till Firestore!");
+                renderMatches(upcomingMatches);
+
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = `<p style="color: red;">Kunde inte hämta matcher. Fel: ${error.message}</p>`;
+            }
         }
-
-        const upcomingMatches = data.matches.slice(0, 3);
-        if (upcomingMatches.length === 0) {
-            container.innerHTML = `<p>Hittade inga kommande matcher just nu.</p>`;
-            return;
-        }
-
-        // Spara till Firestore direkt från frontend (eftersom inloggningen hanterar säkerheten för att skriva)
-        const batch = writeBatch(db);
-        upcomingMatches.forEach(match => {
-            const matchRef = doc(db, "matches", match.id.toString());
-            batch.set(matchRef, match);
-        });
-        await batch.commit();
-        
-        console.log("Matcher hämtade via Cloudflare och sparade till Firestore!");
-        renderMatches(upcomingMatches);
-
-    } catch (error) {
-        console.error(error);
-        container.innerHTML = `<p style="color: red;">Kunde inte hämta matcher. Fel: ${error.message}</p>`;
-    }
-}
 
         function renderMatches(matches) {
             const container = document.getElementById('matches-container');
             container.innerHTML = '';
+            
             matches.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+            
             matches.forEach(match => {
                 const matchDate = new Date(match.utcDate).toLocaleString('sv-SE', { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                 container.innerHTML += `
@@ -140,15 +145,17 @@
         window.saveTip = async function(matchId) {
             const homeGoals = document.getElementById(`home-${matchId}`).value;
             const awayGoals = document.getElementById(`away-${matchId}`).value;
+            
             if (homeGoals === '' || awayGoals === '') return alert("Fyll i båda fält!");
 
             const currentUser = auth.currentUser;
             if (!currentUser) return alert("Inloggningsfel, ladda om sidan.");
             
             const tipRef = doc(db, "matches", matchId.toString(), "tips", currentUser.uid);
+            
             try {
                 await setDoc(tipRef, {
-                    user: currentUser.displayName,
+                    user: currentUser.displayName || currentUser.email.split('@')[0], // En liten snyggare fallback om displayName saknas
                     email: currentUser.email,
                     home: parseInt(homeGoals),
                     away: parseInt(awayGoals)
