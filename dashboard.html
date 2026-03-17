@@ -38,8 +38,8 @@
     
     <div class="container">
         <div id="admin-panel">
-            <h3 class="admin-header">👑 GOD MODE (Admin) <button id="init-db-btn" class="admin-btn">Skapa 104 matcher i databasen</button></h3>
-            <p style="margin: 0; font-size: 0.9em;">Här inne kan du ändra lagnamn (t.ex. byta ut TBD mot riktiga lag) och mata in officiella slutresultat.</p>
+            <h3 class="admin-header">👑 GOD MODE (Admin) <button id="init-db-btn" class="admin-btn">Ladda in spelschema 2026</button></h3>
+            <p style="margin: 0; font-size: 0.9em;">Här inne kan du ändra lagnamn (t.ex. byta ut kvalgrupper mot riktiga lag) och mata in officiella slutresultat.</p>
         </div>
 
         <h3>Alla Matcher</h3>
@@ -64,7 +64,6 @@
             }
             document.getElementById('user-name').textContent = user.displayName || user.email;
             
-            // GOD MODE KONTROLL
             if (user.email.toLowerCase() === 'karl.tornered@nyamunken.se') {
                 isAdmin = true;
                 document.getElementById('admin-panel').style.display = 'block';
@@ -85,7 +84,7 @@
                 renderMatches(dbMatches);
             } else {
                 document.getElementById('matches-container').innerHTML = 
-                    isAdmin ? `<p>Databasen är tom. Klicka på 'Skapa 104 matcher' i God Mode-panelen!</p>` : `<p>Databasen byggs upp, kom tillbaka snart!</p>`;
+                    isAdmin ? `<p>Databasen är tom. Klicka på 'Ladda in spelschema 2026' i God Mode-panelen!</p>` : `<p>Databasen byggs upp, kom tillbaka snart!</p>`;
             }
         }
 
@@ -93,15 +92,16 @@
             const container = document.getElementById('matches-container');
             container.innerHTML = '';
             
-            // Sortera matcherna på ID (Match 1 till 104)
             matches.sort((a, b) => a.id - b.id);
             
             matches.forEach(match => {
-                // Om du är admin visas textfält för att ändra namn och resultat
                 if (isAdmin) {
                     container.innerHTML += `
                         <div class="match-card" style="border-left: 5px solid #ffc107;">
-                            <div class="match-header"><span>Match ${match.id} | ${match.stage}</span></div>
+                            <div class="match-header">
+                                <span>Match ${match.id} | ${match.stage}</span>
+                                <span>${match.date}</span>
+                            </div>
                             <div class="match-teams">
                                 <input type="text" id="homeName-${match.id}" class="admin-input" value="${match.homeTeam}">
                                 <div>
@@ -116,10 +116,12 @@
                             </div>
                         </div>`;
                 } else {
-                    // Vanliga användare ser bara detta (här lägger vi in tipp-funktionen i nästa steg)
                     container.innerHTML += `
                         <div class="match-card">
-                            <div class="match-header"><span>Match ${match.id} | ${match.stage}</span></div>
+                            <div class="match-header">
+                                <span>Match ${match.id} | ${match.stage}</span>
+                                <span>${match.date}</span>
+                            </div>
                             <div class="match-teams">
                                 <span>${match.homeTeam}</span>
                                 <span>${match.homeScore !== null ? match.homeScore : '-'} : ${match.awayScore !== null ? match.awayScore : '-'}</span>
@@ -133,8 +135,6 @@
         // ==========================================
         // 2. ADMIN-FUNKTIONER (GOD MODE)
         // ==========================================
-        
-        // Spara resultat/lagnamn (Görs tillgänglig globalt)
         window.updateMatch = async function(matchId) {
             const homeTeam = document.getElementById(`homeName-${matchId}`).value;
             const awayTeam = document.getElementById(`awayName-${matchId}`).value;
@@ -154,41 +154,149 @@
             }
         };
 
-        // Generera hela VM-strukturen (104 matcher)
+        // ==========================================
+        // 3. AUTOMATISK GENERERING AV HELA VM-TRÄDET
+        // ==========================================
         document.getElementById('init-db-btn').addEventListener('click', async () => {
-            if (!confirm("Är du säker? Detta raderar/skriver över befintliga matcher och skapar 104 nya blanka matcher!")) return;
+            if (!confirm("Är du säker? Detta bygger om databasen med FIFAs officiella spelschema för 2026!")) return;
             
-            document.getElementById('init-db-btn').textContent = "Skapar databas...";
+            document.getElementById('init-db-btn').textContent = "Laddar in 104 matcher...";
             const batch = writeBatch(db);
+            let matches = [];
             
-            // FIFA 2026: 72 gruppmatcher (Match 1-72), 16 sextondelsfinaler (73-88), 8 åttondelar (89-96), 4 kvartsfinaler (97-100), 2 semi (101-102), brons (103), final (104)
-            for (let i = 1; i <= 104; i++) {
-                let stage = "Gruppspel";
-                if (i > 72) stage = "Sextondelsfinal";
-                if (i > 88) stage = "Åttondelsfinal";
-                if (i > 96) stage = "Kvartsfinal";
-                if (i > 100) stage = "Semifinal";
-                if (i === 103) stage = "Bronsmatch";
-                if (i === 104) stage = "FINAL";
+            const groupStage = [
+                { id: 1, date: "11 juni 21:00", stage: "Grupp A", homeTeam: "Mexiko", awayTeam: "Sydafrika" },
+                { id: 2, date: "12 juni 04:00", stage: "Grupp A", homeTeam: "Sydkorea", awayTeam: "DEN/MKD/CZE/IRL" },
+                { id: 3, date: "12 juni 21:00", stage: "Grupp B", homeTeam: "Kanada", awayTeam: "ITA/NIR/WAL/BIH" },
+                { id: 4, date: "13 juni 03:00", stage: "Grupp D", homeTeam: "USA", awayTeam: "Paraguay" },
+                { id: 5, date: "13 juni 21:00", stage: "Grupp B", homeTeam: "Qatar", awayTeam: "Schweiz" },
+                { id: 6, date: "14 juni 00:00", stage: "Grupp C", homeTeam: "Brasilien", awayTeam: "Marocko" },
+                { id: 7, date: "14 juni 03:00", stage: "Grupp C", homeTeam: "Haiti", awayTeam: "Skottland" },
+                { id: 8, date: "14 juni 06:00", stage: "Grupp D", homeTeam: "Australien", awayTeam: "TUR/ROU/SVK/KOS" },
+                { id: 9, date: "14 juni 19:00", stage: "Grupp E", homeTeam: "Tyskland", awayTeam: "Curaçao" },
+                { id: 10, date: "14 juni 22:00", stage: "Grupp F", homeTeam: "Nederländerna", awayTeam: "Japan" },
+                { id: 11, date: "15 juni 01:00", stage: "Grupp E", homeTeam: "Elfenbenskusten", awayTeam: "Ecuador" },
+                { id: 12, date: "15 juni 04:00", stage: "Grupp F", homeTeam: "UKR/SWE/POL/ALB", awayTeam: "Tunisien" },
+                { id: 13, date: "15 juni 18:00", stage: "Grupp H", homeTeam: "Spanien", awayTeam: "Kap Verde" },
+                { id: 14, date: "15 juni 21:00", stage: "Grupp G", homeTeam: "Belgien", awayTeam: "Egypten" },
+                { id: 15, date: "16 juni 00:00", stage: "Grupp H", homeTeam: "Saudiarabien", awayTeam: "Uruguay" },
+                { id: 16, date: "16 juni 03:00", stage: "Grupp G", homeTeam: "Iran", awayTeam: "Nya Zeeland" },
+                { id: 17, date: "16 juni 21:00", stage: "Grupp I", homeTeam: "Frankrike", awayTeam: "Senegal" },
+                { id: 18, date: "17 juni 00:00", stage: "Grupp I", homeTeam: "BOL/SUR/IRQ", awayTeam: "Norge" },
+                { id: 19, date: "17 juni 03:00", stage: "Grupp J", homeTeam: "Argentina", awayTeam: "Algeriet" },
+                { id: 20, date: "17 juni 06:00", stage: "Grupp J", homeTeam: "Österrike", awayTeam: "Jordanien" },
+                { id: 21, date: "17 juni 19:00", stage: "Grupp K", homeTeam: "Portugal", awayTeam: "NCL/JAM/COD" },
+                { id: 22, date: "17 juni 22:00", stage: "Grupp L", homeTeam: "England", awayTeam: "Kroatien" },
+                { id: 23, date: "18 juni 01:00", stage: "Grupp L", homeTeam: "Ghana", awayTeam: "Panama" },
+                { id: 24, date: "18 juni 04:00", stage: "Grupp K", homeTeam: "Uzbekistan", awayTeam: "Colombia" },
+                { id: 25, date: "18 juni 18:00", stage: "Grupp A", homeTeam: "DEN/MKD/CZE/IRL", awayTeam: "Sydafrika" },
+                { id: 26, date: "18 juni 21:00", stage: "Grupp B", homeTeam: "Schweiz", awayTeam: "ITA/NIR/WAL/BIH" },
+                { id: 27, date: "19 juni 00:00", stage: "Grupp B", homeTeam: "Kanada", awayTeam: "Qatar" },
+                { id: 28, date: "19 juni 03:00", stage: "Grupp A", homeTeam: "Mexiko", awayTeam: "Sydkorea" },
+                { id: 29, date: "19 juni 21:00", stage: "Grupp D", homeTeam: "USA", awayTeam: "Australien" },
+                { id: 30, date: "20 juni 00:00", stage: "Grupp C", homeTeam: "Skottland", awayTeam: "Marocko" },
+                { id: 31, date: "20 juni 03:00", stage: "Grupp C", homeTeam: "Brasilien", awayTeam: "Haiti" },
+                { id: 32, date: "20 juni 06:00", stage: "Grupp D", homeTeam: "TUR/ROU/SVK/KOS", awayTeam: "Paraguay" },
+                { id: 33, date: "20 juni 19:00", stage: "Grupp F", homeTeam: "Nederländerna", awayTeam: "UKR/SWE/POL/ALB" },
+                { id: 34, date: "20 juni 22:00", stage: "Grupp E", homeTeam: "Tyskland", awayTeam: "Elfenbenskusten" },
+                { id: 35, date: "21 juni 02:00", stage: "Grupp E", homeTeam: "Ecuador", awayTeam: "Curaçao" },
+                { id: 36, date: "21 juni 06:00", stage: "Grupp F", homeTeam: "Tunisien", awayTeam: "Japan" },
+                { id: 37, date: "21 juni 18:00", stage: "Grupp H", homeTeam: "Spanien", awayTeam: "Saudiarabien" },
+                { id: 38, date: "21 juni 21:00", stage: "Grupp G", homeTeam: "Belgien", awayTeam: "Iran" },
+                { id: 39, date: "22 juni 00:00", stage: "Grupp H", homeTeam: "Uruguay", awayTeam: "Kap Verde" },
+                { id: 40, date: "22 juni 03:00", stage: "Grupp G", homeTeam: "Nya Zeeland", awayTeam: "Egypten" },
+                { id: 41, date: "22 juni 19:00", stage: "Grupp J", homeTeam: "Argentina", awayTeam: "Österrike" },
+                { id: 42, date: "22 juni 23:00", stage: "Grupp I", homeTeam: "Frankrike", awayTeam: "BOL/SUR/IRQ" },
+                { id: 43, date: "23 juni 02:00", stage: "Grupp I", homeTeam: "Norge", awayTeam: "Senegal" },
+                { id: 44, date: "23 juni 05:00", stage: "Grupp J", homeTeam: "Jordanien", awayTeam: "Algeriet" },
+                { id: 45, date: "23 juni 19:00", stage: "Grupp K", homeTeam: "Portugal", awayTeam: "Uzbekistan" },
+                { id: 46, date: "23 juni 22:00", stage: "Grupp L", homeTeam: "England", awayTeam: "Ghana" },
+                { id: 47, date: "24 juni 01:00", stage: "Grupp L", homeTeam: "Panama", awayTeam: "Kroatien" },
+                { id: 48, date: "24 juni 04:00", stage: "Grupp K", homeTeam: "Colombia", awayTeam: "NCL/JAM/COD" },
+                { id: 49, date: "24 juni 21:00", stage: "Grupp B", homeTeam: "Schweiz", awayTeam: "Kanada" },
+                { id: 50, date: "24 juni 21:00", stage: "Grupp B", homeTeam: "ITA/NIR/WAL/BIH", awayTeam: "Qatar" },
+                { id: 51, date: "25 juni 00:00", stage: "Grupp C", homeTeam: "Skottland", awayTeam: "Brasilien" },
+                { id: 52, date: "25 juni 00:00", stage: "Grupp C", homeTeam: "Marocko", awayTeam: "Haiti" },
+                { id: 53, date: "25 juni 03:00", stage: "Grupp A", homeTeam: "DEN/MKD/CZE/IRL", awayTeam: "Mexiko" },
+                { id: 54, date: "25 juni 03:00", stage: "Grupp A", homeTeam: "Sydafrika", awayTeam: "Sydkorea" },
+                { id: 55, date: "25 juni 22:00", stage: "Grupp E", homeTeam: "Curaçao", awayTeam: "Elfenbenskusten" },
+                { id: 56, date: "25 juni 22:00", stage: "Grupp E", homeTeam: "Ecuador", awayTeam: "Tyskland" },
+                { id: 57, date: "26 juni 01:00", stage: "Grupp F", homeTeam: "Japan", awayTeam: "UKR/SWE/POL/ALB" },
+                { id: 58, date: "26 juni 01:00", stage: "Grupp F", homeTeam: "Tunisien", awayTeam: "Nederländerna" },
+                { id: 59, date: "26 juni 04:00", stage: "Grupp D", homeTeam: "TUR/ROU/SVK/KOS", awayTeam: "USA" },
+                { id: 60, date: "26 juni 04:00", stage: "Grupp D", homeTeam: "Paraguay", awayTeam: "Australien" },
+                { id: 61, date: "26 juni 21:00", stage: "Grupp I", homeTeam: "Norge", awayTeam: "Frankrike" },
+                { id: 62, date: "26 juni 21:00", stage: "Grupp I", homeTeam: "Senegal", awayTeam: "BOL/SUR/IRQ" },
+                { id: 63, date: "27 juni 02:00", stage: "Grupp H", homeTeam: "Kap Verde", awayTeam: "Saudiarabien" },
+                { id: 64, date: "27 juni 02:00", stage: "Grupp H", homeTeam: "Uruguay", awayTeam: "Spanien" },
+                { id: 65, date: "27 juni 05:00", stage: "Grupp G", homeTeam: "Egypten", awayTeam: "Iran" },
+                { id: 66, date: "27 juni 05:00", stage: "Grupp G", homeTeam: "Nya Zeeland", awayTeam: "Belgien" },
+                { id: 67, date: "27 juni 23:00", stage: "Grupp L", homeTeam: "Panama", awayTeam: "England" },
+                { id: 68, date: "27 juni 23:00", stage: "Grupp L", homeTeam: "Kroatien", awayTeam: "Ghana" },
+                { id: 69, date: "28 juni 01:30", stage: "Grupp K", homeTeam: "Colombia", awayTeam: "Portugal" },
+                { id: 70, date: "28 juni 01:30", stage: "Grupp K", homeTeam: "NCL/JAM/COD", awayTeam: "Uzbekistan" },
+                { id: 71, date: "28 juni 04:00", stage: "Grupp J", homeTeam: "Algeriet", awayTeam: "Österrike" },
+                { id: 72, date: "28 juni 04:00", stage: "Grupp J", homeTeam: "Jordanien", awayTeam: "Argentina" }
+            ];
+            groupStage.forEach(m => matches.push({ ...m, homeScore: null, awayScore: null }));
 
-                const matchRef = doc(db, "matches", i.toString());
-                batch.set(matchRef, {
-                    id: i,
-                    stage: stage,
-                    homeTeam: "TBD",
-                    awayTeam: "TBD",
-                    homeScore: null,
-                    awayScore: null
-                });
-            }
+            const r32 = [
+                { id: 73, date: "28 juni 21:00", stage: "Sextondelsfinal", homeTeam: "2A", awayTeam: "2B" },
+                { id: 74, date: "29 juni 19:00", stage: "Sextondelsfinal", homeTeam: "1C", awayTeam: "2F" },
+                { id: 75, date: "29 juni 22:30", stage: "Sextondelsfinal", homeTeam: "1E", awayTeam: "3A/B/C/D/F" },
+                { id: 76, date: "30 juni 03:00", stage: "Sextondelsfinal", homeTeam: "1F", awayTeam: "2C" },
+                { id: 77, date: "30 juni 19:00", stage: "Sextondelsfinal", homeTeam: "2E", awayTeam: "2I" },
+                { id: 78, date: "30 juni 23:00", stage: "Sextondelsfinal", homeTeam: "1I", awayTeam: "3C/D/F/G/H" },
+                { id: 79, date: "01 juli 03:00", stage: "Sextondelsfinal", homeTeam: "1A", awayTeam: "3C/E/F/H/I" },
+                { id: 80, date: "01 juli 18:00", stage: "Sextondelsfinal", homeTeam: "1L", awayTeam: "3E/H/I/J/K" },
+                { id: 81, date: "01 juli 22:00", stage: "Sextondelsfinal", homeTeam: "1G", awayTeam: "3A/E/H/I/J" },
+                { id: 82, date: "02 juli 02:00", stage: "Sextondelsfinal", homeTeam: "1D", awayTeam: "3B/E/F/I/J" },
+                { id: 83, date: "02 juli 21:00", stage: "Sextondelsfinal", homeTeam: "1H", awayTeam: "2J" },
+                { id: 84, date: "03 juli 01:00", stage: "Sextondelsfinal", homeTeam: "2K", awayTeam: "2L" },
+                { id: 85, date: "03 juli 05:00", stage: "Sextondelsfinal", homeTeam: "1B", awayTeam: "3E/F/G/I/J" },
+                { id: 86, date: "03 juli 20:00", stage: "Sextondelsfinal", homeTeam: "2D", awayTeam: "2G" },
+                { id: 87, date: "04 juli 00:00", stage: "Sextondelsfinal", homeTeam: "1J", awayTeam: "2H" },
+                { id: 88, date: "04 juli 03:30", stage: "Sextondelsfinal", homeTeam: "1K", awayTeam: "3D/E/I/J/L" }
+            ];
+            r32.forEach(m => matches.push({ ...m, homeScore: null, awayScore: null }));
+
+            const r16 = [
+                { id: 89, date: "04 juli 19:00", stage: "Åttondelsfinal", homeTeam: "W73", awayTeam: "W75" },
+                { id: 90, date: "04 juli 23:00", stage: "Åttondelsfinal", homeTeam: "W74", awayTeam: "W77" },
+                { id: 91, date: "05 juli 22:00", stage: "Åttondelsfinal", homeTeam: "W76", awayTeam: "W78" },
+                { id: 92, date: "06 juli 02:00", stage: "Åttondelsfinal", homeTeam: "W79", awayTeam: "W80" },
+                { id: 93, date: "06 juli 21:00", stage: "Åttondelsfinal", homeTeam: "W83", awayTeam: "W84" },
+                { id: 94, date: "07 juli 02:00", stage: "Åttondelsfinal", homeTeam: "W81", awayTeam: "W82" },
+                { id: 95, date: "07 juli 18:00", stage: "Åttondelsfinal", homeTeam: "W86", awayTeam: "W88" },
+                { id: 96, date: "07 juli 22:00", stage: "Åttondelsfinal", homeTeam: "W85", awayTeam: "W87" }
+            ];
+            r16.forEach(m => matches.push({ ...m, homeScore: null, awayScore: null }));
+
+            const qf = [
+                { id: 97, date: "09 juli 22:00", stage: "Kvartsfinal", homeTeam: "W89", awayTeam: "W90" },
+                { id: 98, date: "10 juli 21:00", stage: "Kvartsfinal", homeTeam: "W93", awayTeam: "W94" },
+                { id: 99, date: "11 juli 23:00", stage: "Kvartsfinal", homeTeam: "W91", awayTeam: "W92" },
+                { id: 100, date: "12 juli 03:00", stage: "Kvartsfinal", homeTeam: "W95", awayTeam: "W96" }
+            ];
+            qf.forEach(m => matches.push({ ...m, homeScore: null, awayScore: null }));
+
+            matches.push({ id: 101, date: "14 juli 21:00", stage: "Semifinal", homeTeam: "W97", awayTeam: "W98", homeScore: null, awayScore: null });
+            matches.push({ id: 102, date: "15 juli 21:00", stage: "Semifinal", homeTeam: "W99", awayTeam: "W100", homeScore: null, awayScore: null });
+            matches.push({ id: 103, date: "18 juli 23:00", stage: "Bronsmatch", homeTeam: "RU101", awayTeam: "RU102", homeScore: null, awayScore: null });
+            matches.push({ id: 104, date: "19 juli 21:00", stage: "FINAL", homeTeam: "W101", awayTeam: "W102", homeScore: null, awayScore: null });
+
+            matches.forEach(match => {
+                const matchRef = doc(db, "matches", match.id.toString());
+                batch.set(matchRef, match);
+            });
             
             try {
                 await batch.commit();
-                alert("104 matcher skapade framgångsrikt i databasen!");
+                alert("Boom! Databasen uppdaterad med FIFAs exakta lag och schema (på svenska!).");
                 window.location.reload();
             } catch (error) {
                 console.error(error);
-                alert("Kunde inte initiera databasen.");
+                alert("Ett fel uppstod när databasen skulle sparas.");
             }
         });
 
