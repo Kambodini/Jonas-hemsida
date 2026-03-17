@@ -71,45 +71,55 @@
         }
 
         async function fetchMatchesFromAPI() {
-            const container = document.getElementById('matches-container');
-            container.innerHTML = `<p>Databasen är tom. Hämtar matcher via säker proxy...</p>`;
+    const container = document.getElementById('matches-container');
+    container.innerHTML = `<p>Databasen är tom. Hämtar matcher via säker proxy...</p>`;
 
-            // Din riktiga Cloudflare Worker-URL
-            const workerUrl = 'https://vmtips-proxy.karl-tornered.workers.dev/';
+    const workerUrl = 'https://vmtips-proxy.karl-tornered.workers.dev/';
 
-            try {
-                const response = await fetch(workerUrl);
-                
-                if (!response.ok) throw new Error('Proxy-svar var inte OK');
-                
-                const data = await response.json();
-
-                if (data.message || data.errorCode) {
-                    throw new Error(`API-fel: ${data.message || data.errorCode}`);
-                }
-
-                const upcomingMatches = data.matches.slice(0, 3);
-                
-                if (upcomingMatches.length === 0) {
-                    container.innerHTML = `<p>Hittade inga kommande matcher just nu.</p>`;
-                    return;
-                }
-
-                const batch = writeBatch(db);
-                upcomingMatches.forEach(match => {
-                    const matchRef = doc(db, "matches", match.id.toString());
-                    batch.set(matchRef, match);
-                });
-                await batch.commit();
-                
-                console.log("Matcher hämtade via Cloudflare och sparade till Firestore!");
-                renderMatches(upcomingMatches);
-
-            } catch (error) {
-                console.error(error);
-                container.innerHTML = `<p style="color: red;">Kunde inte hämta matcher. Fel: ${error.message}</p>`;
-            }
+    try {
+        const response = await fetch(workerUrl);
+        
+        // Vi läser ut exakt vad API:et/Proxyn svarade som text
+        const rawText = await response.text(); 
+        
+        // Om statusen är ett fel (t.ex. 403 eller 500) kastar vi felet MED texten
+        if (!response.ok) {
+            throw new Error(`Serverfel ${response.status}: ${rawText}`);
         }
+        
+        // Först nu när vi vet att allt gick bra, gör vi om det till JSON
+        const data = JSON.parse(rawText);
+
+        if (data.message || data.errorCode) {
+            throw new Error(`API-fel: ${data.message || data.errorCode}`);
+        }
+
+        // Vissa API-fel returnerar 200 men saknar "matches", så vi sätter en fallback
+        const upcomingMatches = data.matches ? data.matches.slice(0, 3) : [];
+        
+        if (upcomingMatches.length === 0) {
+            container.innerHTML = `<p>Hittade inga kommande matcher just nu.</p>`;
+            return;
+        }
+
+        const batch = writeBatch(db);
+        upcomingMatches.forEach(match => {
+            const matchRef = doc(db, "matches", match.id.toString());
+            batch.set(matchRef, match);
+        });
+        await batch.commit();
+        
+        console.log("Matcher hämtade via Cloudflare och sparade till Firestore!");
+        renderMatches(upcomingMatches);
+
+    } catch (error) {
+        console.error(error);
+        container.innerHTML = `<div style="background: #ffe6e6; padding: 15px; border-radius: 8px; border: 1px solid red;">
+            <p style="color: red; font-weight: bold; margin-top: 0;">Kunde inte hämta matcher.</p>
+            <p style="font-family: monospace; font-size: 0.9em; word-break: break-all;">Detaljerat fel: ${error.message}</p>
+        </div>`;
+    }
+}
 
         function renderMatches(matches) {
             const container = document.getElementById('matches-container');
