@@ -5,107 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - VM-tips 2026</title>
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0;
-            background-color: #f0f2f5; 
-            color: #333;
-        }
-        .navbar {
-            background-color: #2c3e50;
-            color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-        .btn {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background-color: #f0f2f5; color: #333; }
+        .navbar { background-color: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        .btn { background-color: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn:hover { background-color: #218838; }
         .btn-logout { background-color: #dc3545; }
-        .btn-logout:hover { background-color: #c82333; }
-        
-        .match-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            margin-bottom: 1.5rem;
-        }
-        .match-header {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-        }
-        .match-teams {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        .bet-input-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-        .bet-input-group input {
-            width: 40px;
-            padding: 5px;
-            text-align: center;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-        .colleague-tips {
-            background: #e9ecef;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-        }
-        .colleague-tips h4 {
-            margin: 0 0 10px 0;
-            font-size: 0.95rem;
-        }
-        .tip-group {
-            margin-bottom: 5px;
-        }
-        .tooltip-text {
-            text-decoration: underline dotted;
-            cursor: help;
-            color: #0056b3;
-        }
-        .error-screen {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            text-align: center;
-            margin-top: 2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+        .match-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+        .match-header { font-size: 0.9rem; color: #666; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .match-teams { display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; }
+        .bet-input-group { display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+        .bet-input-group input { width: 40px; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        .colleague-tips { background: #e9ecef; padding: 10px; border-radius: 8px; font-size: 0.9rem; }
+        .tip-group { margin-bottom: 5px; }
+        .tooltip-text { text-decoration: underline dotted; cursor: help; color: #0056b3; }
+        .error-screen { background: white; padding: 2rem; border-radius: 12px; text-align: center; margin-top: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
-
     <nav class="navbar">
         <h2>VM-tips 2026</h2>
         <div>
@@ -116,116 +33,60 @@
 
     <div class="container" id="main-content">
         <h3>Kommande Matcher (Champions League Test)</h3>
-        <div id="matches-container">
-            <p>Laddar matcher från API...</p>
-        </div>
+        <div id="matches-container"><p>Laddar matcher från API...</p></div>
     </div>
 
-    <!-- Firebase SDK (Modular v12.10.0) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAwhpoNdvc9tbc5Ee0owBApxiXW4X8-HS0",
-            authDomain: "jonas-hemsida.firebaseapp.com",
-            projectId: "jonas-hemsida",
-            storageBucket: "jonas-hemsida.firebasestorage.app",
-            messagingSenderId: "65137999270",
-            appId: "1:65137999270:web:f76cc4968956cc4e7f6367"
-        };
+        import { firebaseConfig, FOOTBALL_API_KEY } from './config.js';
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // KONTROLLERA INLOGGNING (Nu med felsökningsläge!)
         onAuthStateChanged(auth, (user) => {
-            console.log("Auth-kontroll triggades. Användare:", user); // Skriver ut i DevTools (F12)
-
             const mainContent = document.getElementById('main-content');
-
             if (!user) {
-                mainContent.innerHTML = `
-                    <div class="error-screen">
-                        <h2>🕵️‍♂️ Tappad inloggning!</h2>
-                        <p>Firebase känner inte av att någon är inloggad på denna sida.</p>
-                        <p><i>Kör du i inkognitoläge? Webbläsaren kan ha raderat inloggningen vid sidbytet.</i></p>
-                        <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; margin-top: 15px;">Gå tillbaka till inloggningen</a>
-                    </div>
-                `;
+                mainContent.innerHTML = `<div class="error-screen"><h2>🕵️‍♂️ Tappad inloggning!</h2><p>Vänligen logga in igen.</p><a href="index.html" class="btn">Till inloggningen</a></div>`;
                 return;
             }
-
-            // Använd toLowerCase() för att undvika problem med stora/små bokstäver
             if (!user.email.toLowerCase().endsWith('@nyamunken.se')) {
-                mainContent.innerHTML = `
-                    <div class="error-screen">
-                        <h2>❌ Fel domän!</h2>
-                        <p>Du är inloggad som <strong>${user.email}</strong>, men vi kräver @nyamunken.se.</p>
-                        <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; margin-top: 15px;">Gå tillbaka och logga ut</a>
-                    </div>
-                `;
+                mainContent.innerHTML = `<div class="error-screen"><h2>❌ Fel domän!</h2><p>Du är inloggad som ${user.email}.</p><a href="index.html" class="btn">Logga ut</a></div>`;
                 return;
             }
-
-            // Allt är grönt! Fortsätt som vanligt.
             document.getElementById('user-name').textContent = user.displayName || user.email;
             fetchUpcomingMatches();
         });
 
-        // HÄMTA MATCHER FRÅN API
         async function fetchUpcomingMatches() {
-            // TODO: KLISTRA IN DIN API-NYCKEL HÄR IGEN!
-            const apiKey = '362dbf4c4cbd4a4dab2fad63440d0000'; 
-            
-            // Vi använder en CORS-proxy för att lura API:et att vi inte anropar från en webbläsare
             const targetUrl = 'https://api.football-data.org/v4/competitions/CL/matches?status=SCHEDULED';
             const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
-
             try {
-                const response = await fetch(proxyUrl, {
-                    headers: { 'X-Auth-Token': apiKey }
-                });
-                
-                if (!response.ok) throw new Error(`API svarade med status: ${response.status}`);
+                const response = await fetch(proxyUrl, { headers: { 'X-Auth-Token': FOOTBALL_API_KEY } });
                 const data = await response.json();
-                
-                // Plocka ut de 3 första matcherna (om det finns några schemalagda)
                 if(data.matches && data.matches.length > 0) {
-                    const nextThreeMatches = data.matches.slice(0, 3);
-                    renderMatches(nextThreeMatches);
+                    renderMatches(data.matches.slice(0, 3));
                 } else {
-                    document.getElementById('matches-container').innerHTML = `<p>Hittade inga kommande matcher just nu.</p>`;
+                    document.getElementById('matches-container').innerHTML = `<p>Inga kommande matcher just nu.</p>`;
                 }
-
             } catch (error) {
-                console.error("API-fel:", error);
-                document.getElementById('matches-container').innerHTML = 
-                    `<p style="color: red;">Kunde inte ladda matcher. Kolla konsolen (F12) för detaljer. Felmeddelande: ${error.message}</p>`;
+                document.getElementById('matches-container').innerHTML = `<p style="color: red;">Fel: ${error.message}</p>`;
             }
         }
 
-        // RITA UT MATCHER OCH TIPS
         function renderMatches(matches) {
             const container = document.getElementById('matches-container');
-            container.innerHTML = ''; 
-
+            container.innerHTML = '';
             const mockTipsData = [
-                { user: 'Stefan', home: 2, away: 1 },
-                { user: 'Lars', home: 2, away: 1 },
-                { user: 'Anna', home: 2, away: 1 },
-                { user: 'Karl', home: 1, away: 1 },
-                { user: 'Johan', home: 3, away: 0 }
+                { user: 'Stefan', home: 2, away: 1 }, { user: 'Lars', home: 2, away: 1 }, { user: 'Anna', home: 2, away: 1 },
+                { user: 'Karl', home: 1, away: 1 }, { user: 'Johan', home: 3, away: 0 }
             ];
 
             matches.forEach(match => {
-                const matchDate = new Date(match.utcDate).toLocaleString('sv-SE', {
-                    weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'
-                });
-
-                const matchHtml = `
+                const matchDate = new Date(match.utcDate).toLocaleString('sv-SE', { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                container.innerHTML += `
                     <div class="match-card">
                         <div class="match-header">${matchDate}</div>
                         <div class="match-teams">
@@ -233,7 +94,6 @@
                             <span>vs</span>
                             <span>${match.awayTeam.shortName || match.awayTeam.name}</span>
                         </div>
-                        
                         <div class="bet-input-group">
                             <label>Ditt tips:</label>
                             <input type="number" min="0" id="home-${match.id}" placeholder="0">
@@ -241,64 +101,40 @@
                             <input type="number" min="0" id="away-${match.id}" placeholder="0">
                             <button class="btn" onclick="saveTip(${match.id})">Spara rad</button>
                         </div>
-
                         <div class="colleague-tips">
                             <h4>Kollegornas tips</h4>
                             ${formatGroupedTips(mockTipsData)}
                         </div>
-                    </div>
-                `;
-                container.innerHTML += matchHtml;
+                    </div>`;
             });
         }
 
-        // LOGIK FÖR ATT GRUPPERA TIPSEN SMART
         function formatGroupedTips(tipsArray) {
             const grouped = {};
-            
             tipsArray.forEach(tip => {
-                const resultStr = `${tip.home}-${tip.away}`;
-                if (!grouped[resultStr]) grouped[resultStr] = [];
-                grouped[resultStr].push(tip.user);
+                const res = `${tip.home}-${tip.away}`;
+                if (!grouped[res]) grouped[res] = [];
+                grouped[res].push(tip.user);
             });
-
             let html = '';
-            for (const [result, users] of Object.entries(grouped)) {
+            for (const [res, users] of Object.entries(grouped)) {
                 if (users.length <= 2) {
-                    html += `<div class="tip-group"><strong>${result}:</strong> ${users.join(', ')}</div>`;
+                    html += `<div class="tip-group"><strong>${res}:</strong> ${users.join(', ')}</div>`;
                 } else {
-                    const visibleUsers = users.slice(0, 2).join(', ');
-                    const allUsers = users.join(', '); 
-                    html += `
-                        <div class="tip-group">
-                            <strong>${result}:</strong> ${visibleUsers} 
-                            <span class="tooltip-text" title="${allUsers}">m.fl.</span>
-                        </div>
-                    `;
+                    html += `<div class="tip-group"><strong>${res}:</strong> ${users.slice(0, 2).join(', ')} <span class="tooltip-text" title="${users.join(', ')}">m.fl.</span></div>`;
                 }
             }
-            return html || '<p>Inga tips lagda ännu.</p>';
+            return html || '<p>Inga tips lagda.</p>';
         }
 
-        // SPARA TIPS (Lokal testfunktion)
         window.saveTip = async function(matchId) {
-            const homeGoals = document.getElementById(`home-${matchId}`).value;
-            const awayGoals = document.getElementById(`away-${matchId}`).value;
-            
-            if(homeGoals === '' || awayGoals === '') {
-                alert("Du måste fylla i mål för båda lagen!");
-                return;
-            }
-
-            alert(`Ditt tips ${homeGoals}-${awayGoals} är sparat lokalt!`);
+            const h = document.getElementById(`home-${matchId}`).value;
+            const a = document.getElementById(`away-${matchId}`).value;
+            if(h === '' || a === '') return alert("Fyll i båda fält!");
+            alert(`Tips ${h}-${a} sparat lokalt!`);
         };
 
-        // LOGGA UT
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            signOut(auth).then(() => {
-                window.location.href = 'index.html';
-            });
-        });
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'index.html'));
     </script>
 </body>
 </html>
