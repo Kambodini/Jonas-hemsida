@@ -24,17 +24,6 @@
             margin: 2rem auto;
             padding: 0 1rem;
         }
-        .alert-box {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-            display: none; /* Döljs som standard, visas via JS */
-            justify-content: space-between;
-            align-items: center;
-        }
         .btn {
             background-color: #28a745;
             color: white;
@@ -50,41 +39,61 @@
         
         .match-card {
             background: white;
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
         }
         .match-header {
-            text-align: center;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 1rem;
-            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
         }
-        .score-board {
+        .match-teams {
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
             align-items: center;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: bold;
-            margin: 1rem 0;
+            margin-bottom: 15px;
         }
-        .live-badge {
-            background-color: #dc3545;
-            color: white;
-            font-size: 0.8rem;
-            padding: 2px 8px;
-            border-radius: 12px;
-            animation: pulse 2s infinite;
+        .bet-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
         }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        .bet-input-group input {
+            width: 40px;
+            padding: 5px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
         }
         .colleague-tips {
-            margin-top: 1.5rem;
-            border-top: 1px solid #eee;
-            padding-top: 1rem;
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .colleague-tips h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.95rem;
+        }
+        .tip-group {
+            margin-bottom: 5px;
+        }
+        /* Styling för hover-effekten på 'm.fl.' */
+        .tooltip-text {
+            text-decoration: underline dotted;
+            cursor: help;
+            color: #0056b3;
         }
     </style>
 </head>
@@ -99,32 +108,9 @@
     </nav>
 
     <div class="container">
-        <!-- Varning om tips saknas -->
-        <div id="missing-tips-alert" class="alert-box">
-            <span><strong>Dags att tippa!</strong> Du har inte lagt in dina tips för mästerskapet ännu.</span>
-            <button class="btn">Lägg mina tips</button>
-        </div>
-
-        <!-- Nästa / Pågående match -->
-        <div class="match-card">
-            <div class="match-header">
-                <span class="live-badge" id="match-status">LIVE</span>
-                <p style="margin: 5px 0; color: #666;">Champions League (Testmatch)</p>
-            </div>
-            
-            <div class="score-board">
-                <div id="team-home">Hemmalag</div>
-                <div id="match-score">0 - 0</div>
-                <div id="team-away">Bortalag</div>
-            </div>
-
-            <div class="colleague-tips">
-                <h3>Kollegornas tips</h3>
-                <div id="tips-list">
-                    <!-- Fylls på via JavaScript från databasen -->
-                    <p><em>Laddar tips...</em></p>
-                </div>
-            </div>
+        <h3>Kommande Matcher (Champions League Test)</h3>
+        <div id="matches-container">
+            <p>Laddar matcher från API...</p>
         </div>
     </div>
 
@@ -132,10 +118,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyAwhpoNdvc9tbc5Ee0owBApxiXW4X8-HS0",
+            apiKey: "362dbf4c4cbd4a4dab2fad63440d0000",
             authDomain: "jonas-hemsida.firebaseapp.com",
             projectId: "jonas-hemsida",
             storageBucket: "jonas-hemsida.firebasestorage.app",
@@ -147,77 +133,140 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // 1. KONTROLLERA INLOGGNING
-        onAuthStateChanged(auth, async (user) => {
+        // KONTROLLERA INLOGGNING
+        onAuthStateChanged(auth, (user) => {
             if (!user || !user.email.endsWith('@nyamunken.se')) {
-                // Ingen användare inloggad eller fel domän -> Skicka till index
                 window.location.href = 'index.html';
                 return;
             }
-
-            // Uppdatera UI med användarens namn
             document.getElementById('user-name').textContent = user.displayName || user.email;
-
-            // 2. KONTROLLERA OM ANVÄNDAREN HAR LAGT SINA TIPS
-            // Vi letar efter ett dokument i Firestore under 'userTips' med användarens UID
-            const tipsRef = doc(db, "userTips", user.uid);
-            const tipsSnap = await getDoc(tipsRef);
-
-            if (!tipsSnap.exists()) {
-                document.getElementById('missing-tips-alert').style.display = 'flex';
-            }
-
-            // 3. HÄMTA TESTMATCH (API-anrop)
-            fetchLiveMatch();
+            
+            // Hämta matcher när vi vet att användaren är inloggad
+            fetchUpcomingMatches();
         });
 
-        // Hämta API-data (Byt ut mot din API-nyckel senare)
-        async function fetchLiveMatch() {
-            // OBS: Detta är ett exempel på hur anropet ser ut.
-            // Du behöver registrera dig för ett API, t.ex. API-Football eller liknande.
-            const apiUrl = 'DIN_API_URL_HÄR'; 
-            const apiKey = 'DIN_API_NYCKEL_HÄR';
+        // HÄMTA MATCHER FRÅN API
+        async function fetchUpcomingMatches() {
+            // TODO: KLISTRA IN DIN API-NYCKEL HÄR
+            const apiKey = 'DIN_API_NYCKEL_HÄR'; 
+            
+            // Ett proxy-anrop används ofta på frontend för att undvika CORS-problem med football-data
+            // Om API:et strular i webbläsaren, hojta till!
+            const apiUrl = 'https://api.football-data.org/v4/competitions/CL/matches?status=SCHEDULED';
 
             try {
-                /* Avkommentera när du har din API-nyckel
                 const response = await fetch(apiUrl, {
-                    method: 'GET',
-                    headers: {
-                        'x-rapidapi-key': apiKey,
-                        'x-rapidapi-host': 'api-football-v1.p.rapidapi.com'
-                    }
+                    headers: { 'X-Auth-Token': apiKey }
                 });
-                const data = await response.json();
-                */
                 
-                // MOCK DATA: Låtsas att vi hämtat PSG vs Bayern München
-                const mockData = {
-                    homeTeam: "PSG",
-                    awayTeam: "Bayern München",
-                    scoreHome: 1,
-                    scoreAway: 2,
-                    status: "LIVE (67')"
-                };
-
-                // Uppdatera UI
-                document.getElementById('team-home').textContent = mockData.homeTeam;
-                document.getElementById('team-away').textContent = mockData.awayTeam;
-                document.getElementById('match-score').textContent = `${mockData.scoreHome} - ${mockData.scoreAway}`;
-                document.getElementById('match-status').textContent = mockData.status;
-
-                // MOCK DATA: Kollegornas tips (Hämtas senare från Firestore)
-                document.getElementById('tips-list').innerHTML = `
-                    <p><strong>Anna:</strong> 2-2</p>
-                    <p><strong>Erik:</strong> 1-3</p>
-                    <p><strong>Du:</strong> Inget tips lagt</p>
-                `;
+                if (!response.ok) throw new Error('Kunde inte hämta data');
+                const data = await response.json();
+                
+                // Plocka ut de 3 första matcherna
+                const nextThreeMatches = data.matches.slice(0, 3);
+                renderMatches(nextThreeMatches);
 
             } catch (error) {
-                console.error("Kunde inte hämta matchdata:", error);
+                console.error("API-fel:", error);
+                document.getElementById('matches-container').innerHTML = 
+                    `<p style="color: red;">Kunde inte ladda matcher. Har du lagt in API-nyckeln?</p>`;
             }
         }
 
-        // LOGGA UT-FUNKTION
+        // RITA UT MATCHER OCH TIPS
+        function renderMatches(matches) {
+            const container = document.getElementById('matches-container');
+            container.innerHTML = ''; // Rensa "Laddar..."
+
+            // Låtsas-data för kollegornas tips (detta hämtar vi från Firestore i nästa steg)
+            const mockTipsData = [
+                { user: 'Stefan', home: 2, away: 1 },
+                { user: 'Lars', home: 2, away: 1 },
+                { user: 'Anna', home: 2, away: 1 },
+                { user: 'Karl', home: 1, away: 1 },
+                { user: 'Johan', home: 3, away: 0 }
+            ];
+
+            matches.forEach(match => {
+                // Formatera datumet snyggt
+                const matchDate = new Date(match.utcDate).toLocaleString('sv-SE', {
+                    weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'
+                });
+
+                const matchHtml = `
+                    <div class="match-card">
+                        <div class="match-header">${matchDate}</div>
+                        <div class="match-teams">
+                            <span>${match.homeTeam.shortName || match.homeTeam.name}</span>
+                            <span>vs</span>
+                            <span>${match.awayTeam.shortName || match.awayTeam.name}</span>
+                        </div>
+                        
+                        <div class="bet-input-group">
+                            <label>Ditt tips:</label>
+                            <input type="number" min="0" id="home-${match.id}" placeholder="0">
+                            <span>-</span>
+                            <input type="number" min="0" id="away-${match.id}" placeholder="0">
+                            <button class="btn" onclick="saveTip(${match.id})">Spara rad</button>
+                        </div>
+
+                        <div class="colleague-tips">
+                            <h4>Kollegornas tips</h4>
+                            ${formatGroupedTips(mockTipsData)}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += matchHtml;
+            });
+        }
+
+        // LOGIK FÖR ATT GRUPPERA TIPSEN SMART
+        function formatGroupedTips(tipsArray) {
+            const grouped = {};
+            
+            // Gruppera efter resultat (t.ex. "2-1")
+            tipsArray.forEach(tip => {
+                const resultStr = `${tip.home}-${tip.away}`;
+                if (!grouped[resultStr]) grouped[resultStr] = [];
+                grouped[resultStr].push(tip.user);
+            });
+
+            let html = '';
+            // Gå igenom grupperna och skapa HTML
+            for (const [result, users] of Object.entries(grouped)) {
+                if (users.length <= 2) {
+                    // 1 eller 2 personer: Visa namnen direkt
+                    html += `<div class="tip-group"><strong>${result}:</strong> ${users.join(', ')}</div>`;
+                } else {
+                    // Fler än 2 personer: Visa de två första + "m.fl." med en hover-effekt
+                    const visibleUsers = users.slice(0, 2).join(', ');
+                    const allUsers = users.join(', '); // Det som visas när man hovrar
+                    html += `
+                        <div class="tip-group">
+                            <strong>${result}:</strong> ${visibleUsers} 
+                            <span class="tooltip-text" title="${allUsers}">m.fl.</span>
+                        </div>
+                    `;
+                }
+            }
+            return html || '<p>Inga tips lagda ännu.</p>';
+        }
+
+        // SPARA TIPS (Förberedd funktion för Firebase)
+        window.saveTip = async function(matchId) {
+            const homeGoals = document.getElementById(`home-${matchId}`).value;
+            const awayGoals = document.getElementById(`away-${matchId}`).value;
+            
+            if(homeGoals === '' || awayGoals === '') {
+                alert("Du måste fylla i mål för båda lagen!");
+                return;
+            }
+
+            alert(`Ditt tips ${homeGoals}-${awayGoals} är sparat lokalt! Nästa steg är att skicka detta till Firebase.`);
+            // Här lägger vi in logiken för att skriva till databasen i nästa steg!
+        };
+
+        // LOGGA UT
         document.getElementById('logout-btn').addEventListener('click', () => {
             signOut(auth).then(() => {
                 window.location.href = 'index.html';
