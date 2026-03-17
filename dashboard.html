@@ -72,9 +72,9 @@
 
        async function fetchMatchesFromAPI() {
             const container = document.getElementById('matches-container');
-            container.innerHTML = `<p>Databasen är tom. Hämtar matcher via säker proxy...</p>`;
+            container.innerHTML = `<p>Databasen är tom. Letar efter VM-matcher via TheSportsDB...</p>`;
 
-            // Din riktiga Cloudflare Worker-URL (samma som innan)
+            // Samma Cloudflare Worker-URL som innan
             const workerUrl = 'https://vmtips-proxy.karl-tornered.workers.dev/';
 
             try {
@@ -87,28 +87,23 @@
                 
                 const data = JSON.parse(rawText);
 
-                // API-Football lägger eventuella fel i en array som heter "errors"
-                if (data.errors && Object.keys(data.errors).length > 0) {
-                    throw new Error(`API-fel: ${JSON.stringify(data.errors)}`);
-                }
-
-                // Matcherna ligger i en array som heter "response" i detta API
-                const upcomingMatches = data.response || [];
+                // TheSportsDB returnerar en array som heter "events". Om det inte finns matcher blir den 'null'
+                const upcomingMatches = data.events ? data.events.slice(0, 3) : [];
                 
                 if (upcomingMatches.length === 0) {
-                    container.innerHTML = `<p>Hittade inga kommande matcher just nu.</p>`;
+                    container.innerHTML = `<p>Hittade inga kommande matcher just nu. Spelschemat kanske inte har släppts i gratis-API:et än!</p>`;
                     return;
                 }
 
                 const batch = writeBatch(db);
                 upcomingMatches.forEach(match => {
-                    // Match-ID ligger inuti "fixture"-objektet nu
-                    const matchRef = doc(db, "matches", match.fixture.id.toString());
+                    // Match-ID heter idEvent här
+                    const matchRef = doc(db, "matches", match.idEvent.toString());
                     batch.set(matchRef, match);
                 });
                 await batch.commit();
                 
-                console.log("Matcher hämtade via API-Football och sparade till Firestore!");
+                console.log("Matcher hämtade via TheSportsDB och sparade till Firestore!");
                 renderMatches(upcomingMatches);
 
             } catch (error) {
@@ -124,20 +119,22 @@
             const container = document.getElementById('matches-container');
             container.innerHTML = '';
             
-            // Sortera efter datum (API-football lägger datumet under fixture.date)
-            matches.sort((a, b) => new Date(a.fixture.date) - new Date(b.fixture.date));
-            
             matches.forEach(match => {
-                const matchDate = new Date(match.fixture.date).toLocaleString('sv-SE', { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                const fixtureId = match.fixture.id; // Deras match-id
+                // Vi slår ihop deras datum och tid för att kunna formatera det svenskt
+                let matchDate = "Tid ej fastställd";
+                if (match.dateEvent && match.strTime) {
+                    matchDate = new Date(`${match.dateEvent}T${match.strTime}`).toLocaleString('sv-SE', { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                }
+                
+                const fixtureId = match.idEvent;
 
                 container.innerHTML += `
                     <div class="match-card">
                         <div class="match-header">${matchDate}</div>
                         <div class="match-teams">
-                            <span>${match.teams.home.name}</span>
+                            <span>${match.strHomeTeam}</span>
                             <span>vs</span>
-                            <span>${match.teams.away.name}</span>
+                            <span>${match.strAwayTeam}</span>
                         </div>
                         <div class="bet-input-group">
                             <label>Ditt tips:</label>
