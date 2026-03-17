@@ -7,7 +7,7 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background-color: #f0f2f5; color: #333; }
         .navbar { background-color: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-        .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
         .btn { background-color: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn:hover { background-color: #218838; }
         .btn-logout { background-color: #dc3545; }
@@ -17,14 +17,31 @@
         .admin-header { color: #856404; margin-top: 0; display: flex; justify-content: space-between; align-items: center; }
         .admin-btn { background-color: #ffc107; color: #000; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         
+        /* Tabs */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .tab-btn { background: #e9ecef; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; color: #555; }
+        .tab-btn.active { background: #2c3e50; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Group Tables Grid */
+        .tables-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 2rem; }
+        .group-table-card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; }
+        .group-table-header { background: #2c3e50; color: white; padding: 8px 15px; font-weight: bold; font-size: 1rem; text-align: center; }
+        .group-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .group-table th { background: #f8f9fa; color: #666; padding: 8px 5px; font-size: 0.75rem; border-bottom: 1px solid #ddd; }
+        .group-table td { padding: 8px 5px; text-align: center; border-bottom: 1px solid #eee; }
+        .group-table td:first-child { text-align: left; padding-left: 15px; font-weight: 600; width: 45%; }
+        .group-table tr:nth-child(1) td, .group-table tr:nth-child(2) td { background-color: #e8f5e9; } /* Markera de två bästa som går vidare */
+
         /* Match Cards */
-        .match-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
-        .match-header { font-size: 0.9rem; color: #666; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: flex; justify-content: space-between; }
-        .match-teams { display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; }
+        .match-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+        .match-header { font-size: 0.85rem; color: #666; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: flex; justify-content: space-between; }
+        .match-teams { display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; }
         
         /* Inputs for Admin */
-        .admin-input { width: 120px; padding: 5px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
-        .score-input { width: 40px; padding: 5px; text-align: center; border: 2px solid #28a745; font-weight: bold; }
+        .admin-input { width: 100px; padding: 5px; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        .score-input { width: 35px; padding: 5px; text-align: center; border: 2px solid #28a745; font-weight: bold; font-size: 1.1rem; border-radius: 4px;}
     </style>
 </head>
 <body>
@@ -39,11 +56,23 @@
     <div class="container">
         <div id="admin-panel">
             <h3 class="admin-header">👑 GOD MODE (Admin) <button id="init-db-btn" class="admin-btn">Ladda in spelschema 2026</button></h3>
-            <p style="margin: 0; font-size: 0.9em;">Här inne kan du ändra lagnamn (t.ex. byta ut kvalgrupper mot riktiga lag) och mata in officiella slutresultat.</p>
+            <p style="margin: 0; font-size: 0.9em;">Du kan redigera resultat under fliken "Alla Matcher". Tabellerna uppdateras automatiskt!</p>
         </div>
 
-        <h3>Alla Matcher</h3>
-        <div id="matches-container"><p>Laddar databasen...</p></div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('tables-tab', this)">Grupptabeller</button>
+            <button class="tab-btn" onclick="switchTab('matches-tab', this)">Alla Matcher / Mata in resultat</button>
+        </div>
+
+        <div id="tables-tab" class="tab-content active">
+            <div id="tables-container" class="tables-grid">
+                <p>Beräknar tabeller...</p>
+            </div>
+        </div>
+
+        <div id="matches-tab" class="tab-content">
+            <div id="matches-container"><p>Laddar matcher...</p></div>
+        </div>
     </div>
 
     <script type="module">
@@ -56,6 +85,14 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         let isAdmin = false;
+
+        // Flik-logik
+        window.switchTab = function(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btnElement.classList.add('active');
+        };
 
         onAuthStateChanged(auth, (user) => {
             if (!user || !user.email.toLowerCase().endsWith('@nyamunken.se')) {
@@ -73,7 +110,7 @@
         });
 
         // ==========================================
-        // 1. HÄMTA OCH RENDERA MATCHER
+        // 1. HÄMTA OCH RENDERA DATA
         // ==========================================
         async function getMatches() {
             const matchesRef = collection(db, "matches");
@@ -81,17 +118,97 @@
             
             if (!matchesSnapshot.empty) {
                 const dbMatches = matchesSnapshot.docs.map(doc => doc.data());
+                renderGroupTables(dbMatches); // Ny funktion!
                 renderMatches(dbMatches);
             } else {
-                document.getElementById('matches-container').innerHTML = 
-                    isAdmin ? `<p>Databasen är tom. Klicka på 'Ladda in spelschema 2026' i God Mode-panelen!</p>` : `<p>Databasen byggs upp, kom tillbaka snart!</p>`;
+                document.getElementById('tables-container').innerHTML = `<p>Databasen är tom.</p>`;
+                document.getElementById('matches-container').innerHTML = `<p>Databasen är tom.</p>`;
             }
         }
 
+        // --- SKAPA OCH BERÄKNA GRUPPTABELLER ---
+        function renderGroupTables(matches) {
+            const container = document.getElementById('tables-container');
+            container.innerHTML = '';
+            
+            // Objekt för att hålla alla 12 grupper
+            const groups = { A:[], B:[], C:[], D:[], E:[], F:[], G:[], H:[], I:[], J:[], K:[], L:[] };
+
+            // Filtrera ut enbart gruppspelsmatcherna (Match 1 till 72)
+            const groupMatches = matches.filter(m => m.id <= 72);
+
+            // Bygg upp tabellerna
+            groupMatches.forEach(m => {
+                const groupLetter = m.stage.replace('Grupp ', '');
+                if(!groups[groupLetter]) return;
+
+                // Lägg till lagen i gruppen om de inte redan finns
+                [m.homeTeam, m.awayTeam].forEach(team => {
+                    if (!groups[groupLetter].find(t => t.name === team)) {
+                        groups[groupLetter].push({ name: team, played: 0, win: 0, draw: 0, loss: 0, gf: 0, ga: 0, gd: 0, points: 0 });
+                    }
+                });
+
+                // Om matchen har ett resultat, uppdatera statistiken
+                if (m.homeScore !== null && m.awayScore !== null) {
+                    let home = groups[groupLetter].find(t => t.name === m.homeTeam);
+                    let away = groups[groupLetter].find(t => t.name === m.awayTeam);
+                    
+                    home.played++; away.played++;
+                    home.gf += m.homeScore; away.gf += m.awayScore;
+                    home.ga += m.awayScore; away.ga += m.homeScore;
+                    home.gd = home.gf - home.ga; away.gd = away.gf - away.ga;
+                    
+                    if (m.homeScore > m.awayScore) { home.win++; home.points += 3; away.loss++; }
+                    else if (m.homeScore < m.awayScore) { away.win++; away.points += 3; home.loss++; }
+                    else { home.draw++; away.draw++; home.points += 1; away.points += 1; }
+                }
+            });
+
+            // Rita ut tabellerna på skärmen
+            Object.keys(groups).forEach(letter => {
+                // Sortera: Poäng -> Målskillnad -> Gjorda mål
+                let teams = groups[letter].sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
+                
+                let tableHTML = `
+                <div class="group-table-card">
+                    <div class="group-table-header">Grupp ${letter}</div>
+                    <table class="group-table">
+                        <thead>
+                            <tr>
+                                <th>Lag</th>
+                                <th title="Spelade matcher">S</th>
+                                <th title="Vinster">V</th>
+                                <th title="Oavgjorda">O</th>
+                                <th title="Förluster">F</th>
+                                <th title="Målskillnad">+/-</th>
+                                <th title="Poäng">P</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                
+                teams.forEach(t => {
+                    tableHTML += `
+                        <tr>
+                            <td>${t.name}</td>
+                            <td>${t.played}</td>
+                            <td>${t.win}</td>
+                            <td>${t.draw}</td>
+                            <td>${t.loss}</td>
+                            <td>${t.gd > 0 ? '+'+t.gd : t.gd}</td>
+                            <td><strong>${t.points}</strong></td>
+                        </tr>`;
+                });
+                
+                tableHTML += `</tbody></table></div>`;
+                container.innerHTML += tableHTML;
+            });
+        }
+
+        // --- RITA UT MATCHLISTAN (DOLD SOM STANDARD) ---
         function renderMatches(matches) {
             const container = document.getElementById('matches-container');
             container.innerHTML = '';
-            
             matches.sort((a, b) => a.id - b.id);
             
             matches.forEach(match => {
@@ -105,14 +222,14 @@
                             <div class="match-teams">
                                 <input type="text" id="homeName-${match.id}" class="admin-input" value="${match.homeTeam}">
                                 <div>
-                                    <input type="number" id="homeScore-${match.id}" class="score-input" placeholder="0" value="${match.homeScore !== null ? match.homeScore : ''}">
+                                    <input type="number" id="homeScore-${match.id}" class="score-input" value="${match.homeScore !== null ? match.homeScore : ''}">
                                     -
-                                    <input type="number" id="awayScore-${match.id}" class="score-input" placeholder="0" value="${match.awayScore !== null ? match.awayScore : ''}">
+                                    <input type="number" id="awayScore-${match.id}" class="score-input" value="${match.awayScore !== null ? match.awayScore : ''}">
                                 </div>
                                 <input type="text" id="awayName-${match.id}" class="admin-input" value="${match.awayTeam}">
                             </div>
                             <div style="text-align: center;">
-                                <button class="admin-btn" onclick="updateMatch(${match.id})">Spara ändringar för Match ${match.id}</button>
+                                <button class="admin-btn" onclick="updateMatch(${match.id})">Spara resultat</button>
                             </div>
                         </div>`;
                 } else {
@@ -133,7 +250,7 @@
         }
 
         // ==========================================
-        // 2. ADMIN-FUNKTIONER (GOD MODE)
+        // 2. ADMIN: SPARA RESULTAT
         // ==========================================
         window.updateMatch = async function(matchId) {
             const homeTeam = document.getElementById(`homeName-${matchId}`).value;
@@ -147,158 +264,13 @@
             try {
                 const matchRef = doc(db, "matches", matchId.toString());
                 await updateDoc(matchRef, { homeTeam, awayTeam, homeScore, awayScore });
-                alert(`Match ${matchId} uppdaterad!`);
+                alert(`Match ${matchId} sparad! Tabellerna uppdateras.`);
+                getMatches(); // Uppdaterar tabellerna direkt på skärmen!
             } catch (error) {
                 console.error("Kunde inte uppdatera:", error);
                 alert("Fel vid sparning!");
             }
         };
-
-        // ==========================================
-        // 3. AUTOMATISK GENERERING AV HELA VM-TRÄDET
-        // ==========================================
-        document.getElementById('init-db-btn').addEventListener('click', async () => {
-            if (!confirm("Är du säker? Detta bygger om databasen med FIFAs officiella spelschema för 2026!")) return;
-            
-            document.getElementById('init-db-btn').textContent = "Laddar in 104 matcher...";
-            const batch = writeBatch(db);
-            let matches = [];
-            
-            const groupStage = [
-                { id: 1, date: "11 juni 21:00", stage: "Grupp A", homeTeam: "Mexiko", awayTeam: "Sydafrika" },
-                { id: 2, date: "12 juni 04:00", stage: "Grupp A", homeTeam: "Sydkorea", awayTeam: "DEN/MKD/CZE/IRL" },
-                { id: 3, date: "12 juni 21:00", stage: "Grupp B", homeTeam: "Kanada", awayTeam: "ITA/NIR/WAL/BIH" },
-                { id: 4, date: "13 juni 03:00", stage: "Grupp D", homeTeam: "USA", awayTeam: "Paraguay" },
-                { id: 5, date: "13 juni 21:00", stage: "Grupp B", homeTeam: "Qatar", awayTeam: "Schweiz" },
-                { id: 6, date: "14 juni 00:00", stage: "Grupp C", homeTeam: "Brasilien", awayTeam: "Marocko" },
-                { id: 7, date: "14 juni 03:00", stage: "Grupp C", homeTeam: "Haiti", awayTeam: "Skottland" },
-                { id: 8, date: "14 juni 06:00", stage: "Grupp D", homeTeam: "Australien", awayTeam: "TUR/ROU/SVK/KOS" },
-                { id: 9, date: "14 juni 19:00", stage: "Grupp E", homeTeam: "Tyskland", awayTeam: "Curaçao" },
-                { id: 10, date: "14 juni 22:00", stage: "Grupp F", homeTeam: "Nederländerna", awayTeam: "Japan" },
-                { id: 11, date: "15 juni 01:00", stage: "Grupp E", homeTeam: "Elfenbenskusten", awayTeam: "Ecuador" },
-                { id: 12, date: "15 juni 04:00", stage: "Grupp F", homeTeam: "UKR/SWE/POL/ALB", awayTeam: "Tunisien" },
-                { id: 13, date: "15 juni 18:00", stage: "Grupp H", homeTeam: "Spanien", awayTeam: "Kap Verde" },
-                { id: 14, date: "15 juni 21:00", stage: "Grupp G", homeTeam: "Belgien", awayTeam: "Egypten" },
-                { id: 15, date: "16 juni 00:00", stage: "Grupp H", homeTeam: "Saudiarabien", awayTeam: "Uruguay" },
-                { id: 16, date: "16 juni 03:00", stage: "Grupp G", homeTeam: "Iran", awayTeam: "Nya Zeeland" },
-                { id: 17, date: "16 juni 21:00", stage: "Grupp I", homeTeam: "Frankrike", awayTeam: "Senegal" },
-                { id: 18, date: "17 juni 00:00", stage: "Grupp I", homeTeam: "BOL/SUR/IRQ", awayTeam: "Norge" },
-                { id: 19, date: "17 juni 03:00", stage: "Grupp J", homeTeam: "Argentina", awayTeam: "Algeriet" },
-                { id: 20, date: "17 juni 06:00", stage: "Grupp J", homeTeam: "Österrike", awayTeam: "Jordanien" },
-                { id: 21, date: "17 juni 19:00", stage: "Grupp K", homeTeam: "Portugal", awayTeam: "NCL/JAM/COD" },
-                { id: 22, date: "17 juni 22:00", stage: "Grupp L", homeTeam: "England", awayTeam: "Kroatien" },
-                { id: 23, date: "18 juni 01:00", stage: "Grupp L", homeTeam: "Ghana", awayTeam: "Panama" },
-                { id: 24, date: "18 juni 04:00", stage: "Grupp K", homeTeam: "Uzbekistan", awayTeam: "Colombia" },
-                { id: 25, date: "18 juni 18:00", stage: "Grupp A", homeTeam: "DEN/MKD/CZE/IRL", awayTeam: "Sydafrika" },
-                { id: 26, date: "18 juni 21:00", stage: "Grupp B", homeTeam: "Schweiz", awayTeam: "ITA/NIR/WAL/BIH" },
-                { id: 27, date: "19 juni 00:00", stage: "Grupp B", homeTeam: "Kanada", awayTeam: "Qatar" },
-                { id: 28, date: "19 juni 03:00", stage: "Grupp A", homeTeam: "Mexiko", awayTeam: "Sydkorea" },
-                { id: 29, date: "19 juni 21:00", stage: "Grupp D", homeTeam: "USA", awayTeam: "Australien" },
-                { id: 30, date: "20 juni 00:00", stage: "Grupp C", homeTeam: "Skottland", awayTeam: "Marocko" },
-                { id: 31, date: "20 juni 03:00", stage: "Grupp C", homeTeam: "Brasilien", awayTeam: "Haiti" },
-                { id: 32, date: "20 juni 06:00", stage: "Grupp D", homeTeam: "TUR/ROU/SVK/KOS", awayTeam: "Paraguay" },
-                { id: 33, date: "20 juni 19:00", stage: "Grupp F", homeTeam: "Nederländerna", awayTeam: "UKR/SWE/POL/ALB" },
-                { id: 34, date: "20 juni 22:00", stage: "Grupp E", homeTeam: "Tyskland", awayTeam: "Elfenbenskusten" },
-                { id: 35, date: "21 juni 02:00", stage: "Grupp E", homeTeam: "Ecuador", awayTeam: "Curaçao" },
-                { id: 36, date: "21 juni 06:00", stage: "Grupp F", homeTeam: "Tunisien", awayTeam: "Japan" },
-                { id: 37, date: "21 juni 18:00", stage: "Grupp H", homeTeam: "Spanien", awayTeam: "Saudiarabien" },
-                { id: 38, date: "21 juni 21:00", stage: "Grupp G", homeTeam: "Belgien", awayTeam: "Iran" },
-                { id: 39, date: "22 juni 00:00", stage: "Grupp H", homeTeam: "Uruguay", awayTeam: "Kap Verde" },
-                { id: 40, date: "22 juni 03:00", stage: "Grupp G", homeTeam: "Nya Zeeland", awayTeam: "Egypten" },
-                { id: 41, date: "22 juni 19:00", stage: "Grupp J", homeTeam: "Argentina", awayTeam: "Österrike" },
-                { id: 42, date: "22 juni 23:00", stage: "Grupp I", homeTeam: "Frankrike", awayTeam: "BOL/SUR/IRQ" },
-                { id: 43, date: "23 juni 02:00", stage: "Grupp I", homeTeam: "Norge", awayTeam: "Senegal" },
-                { id: 44, date: "23 juni 05:00", stage: "Grupp J", homeTeam: "Jordanien", awayTeam: "Algeriet" },
-                { id: 45, date: "23 juni 19:00", stage: "Grupp K", homeTeam: "Portugal", awayTeam: "Uzbekistan" },
-                { id: 46, date: "23 juni 22:00", stage: "Grupp L", homeTeam: "England", awayTeam: "Ghana" },
-                { id: 47, date: "24 juni 01:00", stage: "Grupp L", homeTeam: "Panama", awayTeam: "Kroatien" },
-                { id: 48, date: "24 juni 04:00", stage: "Grupp K", homeTeam: "Colombia", awayTeam: "NCL/JAM/COD" },
-                { id: 49, date: "24 juni 21:00", stage: "Grupp B", homeTeam: "Schweiz", awayTeam: "Kanada" },
-                { id: 50, date: "24 juni 21:00", stage: "Grupp B", homeTeam: "ITA/NIR/WAL/BIH", awayTeam: "Qatar" },
-                { id: 51, date: "25 juni 00:00", stage: "Grupp C", homeTeam: "Skottland", awayTeam: "Brasilien" },
-                { id: 52, date: "25 juni 00:00", stage: "Grupp C", homeTeam: "Marocko", awayTeam: "Haiti" },
-                { id: 53, date: "25 juni 03:00", stage: "Grupp A", homeTeam: "DEN/MKD/CZE/IRL", awayTeam: "Mexiko" },
-                { id: 54, date: "25 juni 03:00", stage: "Grupp A", homeTeam: "Sydafrika", awayTeam: "Sydkorea" },
-                { id: 55, date: "25 juni 22:00", stage: "Grupp E", homeTeam: "Curaçao", awayTeam: "Elfenbenskusten" },
-                { id: 56, date: "25 juni 22:00", stage: "Grupp E", homeTeam: "Ecuador", awayTeam: "Tyskland" },
-                { id: 57, date: "26 juni 01:00", stage: "Grupp F", homeTeam: "Japan", awayTeam: "UKR/SWE/POL/ALB" },
-                { id: 58, date: "26 juni 01:00", stage: "Grupp F", homeTeam: "Tunisien", awayTeam: "Nederländerna" },
-                { id: 59, date: "26 juni 04:00", stage: "Grupp D", homeTeam: "TUR/ROU/SVK/KOS", awayTeam: "USA" },
-                { id: 60, date: "26 juni 04:00", stage: "Grupp D", homeTeam: "Paraguay", awayTeam: "Australien" },
-                { id: 61, date: "26 juni 21:00", stage: "Grupp I", homeTeam: "Norge", awayTeam: "Frankrike" },
-                { id: 62, date: "26 juni 21:00", stage: "Grupp I", homeTeam: "Senegal", awayTeam: "BOL/SUR/IRQ" },
-                { id: 63, date: "27 juni 02:00", stage: "Grupp H", homeTeam: "Kap Verde", awayTeam: "Saudiarabien" },
-                { id: 64, date: "27 juni 02:00", stage: "Grupp H", homeTeam: "Uruguay", awayTeam: "Spanien" },
-                { id: 65, date: "27 juni 05:00", stage: "Grupp G", homeTeam: "Egypten", awayTeam: "Iran" },
-                { id: 66, date: "27 juni 05:00", stage: "Grupp G", homeTeam: "Nya Zeeland", awayTeam: "Belgien" },
-                { id: 67, date: "27 juni 23:00", stage: "Grupp L", homeTeam: "Panama", awayTeam: "England" },
-                { id: 68, date: "27 juni 23:00", stage: "Grupp L", homeTeam: "Kroatien", awayTeam: "Ghana" },
-                { id: 69, date: "28 juni 01:30", stage: "Grupp K", homeTeam: "Colombia", awayTeam: "Portugal" },
-                { id: 70, date: "28 juni 01:30", stage: "Grupp K", homeTeam: "NCL/JAM/COD", awayTeam: "Uzbekistan" },
-                { id: 71, date: "28 juni 04:00", stage: "Grupp J", homeTeam: "Algeriet", awayTeam: "Österrike" },
-                { id: 72, date: "28 juni 04:00", stage: "Grupp J", homeTeam: "Jordanien", awayTeam: "Argentina" }
-            ];
-            groupStage.forEach(m => matches.push({ ...m, homeScore: null, awayScore: null }));
-
-            const r32 = [
-                { id: 73, date: "28 juni 21:00", stage: "Sextondelsfinal", homeTeam: "2A", awayTeam: "2B" },
-                { id: 74, date: "29 juni 19:00", stage: "Sextondelsfinal", homeTeam: "1C", awayTeam: "2F" },
-                { id: 75, date: "29 juni 22:30", stage: "Sextondelsfinal", homeTeam: "1E", awayTeam: "3A/B/C/D/F" },
-                { id: 76, date: "30 juni 03:00", stage: "Sextondelsfinal", homeTeam: "1F", awayTeam: "2C" },
-                { id: 77, date: "30 juni 19:00", stage: "Sextondelsfinal", homeTeam: "2E", awayTeam: "2I" },
-                { id: 78, date: "30 juni 23:00", stage: "Sextondelsfinal", homeTeam: "1I", awayTeam: "3C/D/F/G/H" },
-                { id: 79, date: "01 juli 03:00", stage: "Sextondelsfinal", homeTeam: "1A", awayTeam: "3C/E/F/H/I" },
-                { id: 80, date: "01 juli 18:00", stage: "Sextondelsfinal", homeTeam: "1L", awayTeam: "3E/H/I/J/K" },
-                { id: 81, date: "01 juli 22:00", stage: "Sextondelsfinal", homeTeam: "1G", awayTeam: "3A/E/H/I/J" },
-                { id: 82, date: "02 juli 02:00", stage: "Sextondelsfinal", homeTeam: "1D", awayTeam: "3B/E/F/I/J" },
-                { id: 83, date: "02 juli 21:00", stage: "Sextondelsfinal", homeTeam: "1H", awayTeam: "2J" },
-                { id: 84, date: "03 juli 01:00", stage: "Sextondelsfinal", homeTeam: "2K", awayTeam: "2L" },
-                { id: 85, date: "03 juli 05:00", stage: "Sextondelsfinal", homeTeam: "1B", awayTeam: "3E/F/G/I/J" },
-                { id: 86, date: "03 juli 20:00", stage: "Sextondelsfinal", homeTeam: "2D", awayTeam: "2G" },
-                { id: 87, date: "04 juli 00:00", stage: "Sextondelsfinal", homeTeam: "1J", awayTeam: "2H" },
-                { id: 88, date: "04 juli 03:30", stage: "Sextondelsfinal", homeTeam: "1K", awayTeam: "3D/E/I/J/L" }
-            ];
-            r32.forEach(m => matches.push({ ...m, homeScore: null, awayScore: null }));
-
-            const r16 = [
-                { id: 89, date: "04 juli 19:00", stage: "Åttondelsfinal", homeTeam: "W73", awayTeam: "W75" },
-                { id: 90, date: "04 juli 23:00", stage: "Åttondelsfinal", homeTeam: "W74", awayTeam: "W77" },
-                { id: 91, date: "05 juli 22:00", stage: "Åttondelsfinal", homeTeam: "W76", awayTeam: "W78" },
-                { id: 92, date: "06 juli 02:00", stage: "Åttondelsfinal", homeTeam: "W79", awayTeam: "W80" },
-                { id: 93, date: "06 juli 21:00", stage: "Åttondelsfinal", homeTeam: "W83", awayTeam: "W84" },
-                { id: 94, date: "07 juli 02:00", stage: "Åttondelsfinal", homeTeam: "W81", awayTeam: "W82" },
-                { id: 95, date: "07 juli 18:00", stage: "Åttondelsfinal", homeTeam: "W86", awayTeam: "W88" },
-                { id: 96, date: "07 juli 22:00", stage: "Åttondelsfinal", homeTeam: "W85", awayTeam: "W87" }
-            ];
-            r16.forEach(m => matches.push({ ...m, homeScore: null, awayScore: null }));
-
-            const qf = [
-                { id: 97, date: "09 juli 22:00", stage: "Kvartsfinal", homeTeam: "W89", awayTeam: "W90" },
-                { id: 98, date: "10 juli 21:00", stage: "Kvartsfinal", homeTeam: "W93", awayTeam: "W94" },
-                { id: 99, date: "11 juli 23:00", stage: "Kvartsfinal", homeTeam: "W91", awayTeam: "W92" },
-                { id: 100, date: "12 juli 03:00", stage: "Kvartsfinal", homeTeam: "W95", awayTeam: "W96" }
-            ];
-            qf.forEach(m => matches.push({ ...m, homeScore: null, awayScore: null }));
-
-            matches.push({ id: 101, date: "14 juli 21:00", stage: "Semifinal", homeTeam: "W97", awayTeam: "W98", homeScore: null, awayScore: null });
-            matches.push({ id: 102, date: "15 juli 21:00", stage: "Semifinal", homeTeam: "W99", awayTeam: "W100", homeScore: null, awayScore: null });
-            matches.push({ id: 103, date: "18 juli 23:00", stage: "Bronsmatch", homeTeam: "RU101", awayTeam: "RU102", homeScore: null, awayScore: null });
-            matches.push({ id: 104, date: "19 juli 21:00", stage: "FINAL", homeTeam: "W101", awayTeam: "W102", homeScore: null, awayScore: null });
-
-            matches.forEach(match => {
-                const matchRef = doc(db, "matches", match.id.toString());
-                batch.set(matchRef, match);
-            });
-            
-            try {
-                await batch.commit();
-                alert("Boom! Databasen uppdaterad med FIFAs exakta lag och schema (på svenska!).");
-                window.location.reload();
-            } catch (error) {
-                console.error(error);
-                alert("Ett fel uppstod när databasen skulle sparas.");
-            }
-        });
 
         document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
     </script>
