@@ -29,67 +29,67 @@
         .group-table-card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #eee; }
         .group-table-header { background: #1a1a1a; color: white; padding: 10px 15px; font-weight: bold; font-size: 1.1rem; text-align: center; font-family: 'Playfair Display', serif; letter-spacing: 1px;}
         .group-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        .group-table th { background: #f8f9fa; color: #666; padding: 10px 5px; font-size: 0.8rem; border-bottom: 1px solid #eee; }
-        .group-table td { padding: 10px 5px; text-align: center; border-bottom: 1px solid #f5f5f5; }
+        .group-table th { background: #f8f9fa; color: #666; padding: 8px 5px; font-size: 0.8rem; border-bottom: 1px solid #eee; }
+        .group-table td { padding: 8px 5px; text-align: center; border-bottom: 1px solid #f5f5f5; }
         .group-table td:first-child { text-align: left; padding-left: 15px; font-weight: 600; width: 45%; }
-        .group-table tr:nth-child(1) td { background-color: rgba(40, 167, 69, 0.1); } /* Guld/Grön */
-        .group-table tr:nth-child(2) td { background-color: rgba(23, 162, 184, 0.05); } /* Silver/Blå */
+        .group-table tr:nth-child(1) td { background-color: rgba(40, 167, 69, 0.1); }
+        .group-table tr:nth-child(2) td { background-color: rgba(23, 162, 184, 0.05); }
 
-        /* Match Cards */
-        .match-card { background: white; padding: 1.2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 1rem; border: 1px solid #eaeaea; transition: box-shadow 0.2s; }
-        .match-card:hover { box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .match-header { font-size: 0.8rem; color: #888; margin-bottom: 12px; border-bottom: 1px solid #f0f0f0; padding-bottom: 6px; display: flex; justify-content: space-between; text-transform: uppercase; letter-spacing: 0.5px;}
-        .match-teams { display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; font-weight: 600; margin-bottom: 10px; }
+        /* Kompakta Match Cards! */
+        .match-card { background: white; padding: 0.8rem 1.2rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); margin-bottom: 0.5rem; border: 1px solid #eaeaea; transition: box-shadow 0.2s; }
+        .match-card:hover { box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+        .match-header { font-size: 0.75rem; color: #999; margin-bottom: 6px; display: flex; justify-content: space-between; text-transform: uppercase; letter-spacing: 0.5px;}
+        .match-teams { display: flex; justify-content: space-between; align-items: center; font-size: 1.05rem; font-weight: 600; }
         
-        .team-name { flex: 1; transition: color 0.3s, font-weight 0.3s; }
+        .team-name { flex: 1; transition: color 0.3s, font-weight 0.3s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
         .team-name.home { text-align: left; }
         .team-name.away { text-align: right; }
         
-        /* Färgsättning av vinnare/förlorare */
         .is-winner { color: #1a1a1a !important; font-weight: 800 !important; }
         .is-loser { color: #a0a0a0 !important; font-weight: 400 !important; }
         .is-draw { color: #555 !important; font-weight: 600 !important; }
 
-        /* Inputs */
-        .score-input-group { flex: 0 0 auto; display: flex; align-items: center; gap: 5px; padding: 0 15px; }
-        .score-input { width: 40px; height: 40px; text-align: center; border: 2px solid #ddd; font-weight: bold; font-size: 1.2rem; border-radius: 8px; transition: border-color 0.2s; color: #1a1a1a; }
+        /* Inputs - Dölj pilar och fixera design */
+        .score-input-group { flex: 0 0 auto; display: flex; align-items: center; gap: 5px; padding: 0 10px; }
+        .score-input { width: 35px; height: 35px; text-align: center; border: 2px solid #ddd; font-weight: bold; font-size: 1.1rem; border-radius: 6px; color: #1a1a1a; padding: 0;}
         .score-input:focus { border-color: #28a745; outline: none; }
-        .admin-input { width: 100px; padding: 5px; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        /* Döljer de fula pilarna i number-inputs */
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        
+        .admin-input { width: 100px; padding: 4px; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
         
         /* Admin View */
-        .admin-controls { display: none; text-align: center; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ddd;}
+        .admin-controls { display: none; text-align: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd;}
         .admin-mode-active .admin-controls { display: block; }
         .admin-mode-active .normal-view { display: none !important; }
         .admin-mode-active .admin-view { display: flex !important; }
         .admin-view { display: none; justify-content: space-between; align-items: center; width: 100%;}
         #admin-panel { display: none; background: #fff3cd; border: 2px solid #ffeeba; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
 
-        /* --- WIZARD STYLES --- */
-        .wizard-layout { display: grid; gap: 30px; }
-        /* Dator-layout: Två spalter! */
+        /* Wizard Styles */
+        .wizard-layout { display: grid; gap: 20px; }
         @media (min-width: 850px) {
-            .wizard-layout { grid-template-columns: 350px 1fr; }
+            .wizard-layout { grid-template-columns: 320px 1fr; }
             .wizard-sticky-sidebar { position: sticky; top: 20px; }
         }
         
-        .progress-bar-container { background: #e9ecef; border-radius: 10px; height: 8px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-container { background: #e9ecef; border-radius: 10px; height: 8px; margin-bottom: 15px; overflow: hidden; }
         .progress-bar { background: linear-gradient(90deg, #17a2b8, #28a745); height: 100%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        .team-selector-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-        .team-chip { padding: 12px 15px; background: white; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+        .team-selector-container { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
+        .team-chip { padding: 8px 12px; background: white; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; font-size: 0.95rem;}
         .team-chip:hover { border-color: #bbb; transform: translateY(-1px); }
-        /* Vald som 1:a (Guld) */
         .team-chip.rank-1 { border-color: #ffc107; background: #fffdf5; box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2); }
-        .team-chip.rank-1::after { content: '🏆 1:a'; color: #b08d00; font-size: 0.9rem; }
-        /* Vald som 2:a (Silver) */
+        .team-chip.rank-1::after { content: '🏆 1:a'; color: #b08d00; font-size: 0.8rem; }
         .team-chip.rank-2 { border-color: #17a2b8; background: #f4fbff; box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.2); }
-        .team-chip.rank-2::after { content: '🥈 2:a'; color: #117a8b; font-size: 0.9rem; }
+        .team-chip.rank-2::after { content: '🥈 2:a'; color: #117a8b; font-size: 0.8rem; }
 
-        .btn-generate { width: 100%; background: #1a1a1a; padding: 12px; font-size: 1.1rem; border-radius: 8px; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .btn-generate { width: 100%; background: #1a1a1a; padding: 10px; font-size: 1rem; border-radius: 8px; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 15px; }
         .btn-generate:hover { background: #333; }
         
-        .wizard-mini-table { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;}
-        .wizard-mini-table h4 { margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+        .wizard-mini-table { background: white; border-radius: 12px; padding: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);}
+        .wizard-mini-table h4 { margin: 0 0 8px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; font-size: 0.9rem;}
         
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
@@ -122,7 +122,7 @@
         <div id="start-tab" class="tab-content active">
             <div style="background: white; padding: 3rem 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center;">
                 <h2 style="font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-top:0;">Välkommen till MunkenBollen 2026! ⚽</h2>
-                <p style="font-size: 1.1rem; color: #555; max-width: 600px; margin: 0 auto 2rem auto;">Tippa utgången av VM, slå kollegorna och plocka hem äran. Börja med att klicka på "Tippa Gruppspel" för att bygga din väg mot finalen.</p>
+                <p style="font-size: 1.1rem; color: #555; max-width: 600px; margin: 0 auto 2rem auto;">Tippa utgången av VM, slå kollegorna och plocka hem äran. Börja med att klicka på "Tippa Gruppspel".</p>
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
                     <h3>Leaderboard (Kommer snart)</h3>
                     <p style="color: #666;">Vi vässar på poängsystemet...</p>
@@ -138,12 +138,10 @@
             <div class="wizard-layout">
                 <div class="wizard-left">
                     <div class="wizard-sticky-sidebar">
-                        <h2 id="wizard-title" style="font-family: 'Playfair Display', serif; margin-top:0;">Grupp A</h2>
-                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Klicka på lag för att välja 1:a (Guld) och 2:a (Silver). Generera sedan matchresultaten, eller fyll i dem själv till höger.</p>
+                        <h2 id="wizard-title" style="font-family: 'Playfair Display', serif; margin-top:0; margin-bottom: 5px;">Grupp A</h2>
+                        <p style="font-size: 0.85rem; color: #666; margin-bottom: 12px;">Klicka på lag för att välja 1:a och 2:a. Slumpa sedan, eller fyll i själv.</p>
                         
-                        <div class="team-selector-container" id="wizard-team-selectors">
-                            </div>
-
+                        <div class="team-selector-container" id="wizard-team-selectors"></div>
                         <button class="btn btn-generate" onclick="autoFillGroup()">🎲 Slumpa resultat</button>
                         
                         <div class="wizard-mini-table">
@@ -154,12 +152,10 @@
                 </div>
 
                 <div class="wizard-right">
-                    <div id="wizard-matches">
-                        </div>
-
-                    <div style="display: flex; justify-content: space-between; margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px;">
+                    <div id="wizard-matches"></div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 15px; border-top: 2px solid #eee; padding-top: 15px;">
                         <button class="btn" style="background: #e9ecef; color: #333;" onclick="prevWizardGroup()">⬅ Föregående</button>
-                        <button class="btn" style="padding: 12px 30px; font-size: 1.1rem;" onclick="saveAndNextWizardGroup()">Spara & Nästa ➡</button>
+                        <button class="btn" style="padding: 10px 25px; font-size: 1rem;" onclick="saveAndNextWizardGroup()">Spara & Nästa ➡</button>
                     </div>
                 </div>
             </div>
@@ -188,31 +184,40 @@
         let adminModeActive = false; 
         let allMatchesData = [];
         
-        // --- WIZARD VARIABLER ---
+        // --- FLAGG-LEXIKON ---
+        const flags = {
+            "Mexiko": "🇲🇽", "Sydafrika": "🇿🇦", "Sydkorea": "🇰🇷", "Kanada": "🇨🇦",
+            "USA": "🇺🇸", "Paraguay": "🇵🇾", "Qatar": "🇶🇦", "Schweiz": "🇨🇭",
+            "Brasilien": "🇧🇷", "Marocko": "🇲🇦", "Haiti": "🇭🇹", "Skottland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+            "Australien": "🇦🇺", "Tyskland": "🇩🇪", "Curaçao": "🇨🇼", "Nederländerna": "🇳🇱",
+            "Japan": "🇯🇵", "Elfenbenskusten": "🇨🇮", "Ecuador": "🇪🇨", "Tunisien": "🇹🇳",
+            "Spanien": "🇪🇸", "Kap Verde": "🇨🇻", "Belgien": "🇧🇪", "Egypten": "🇪🇬",
+            "Saudiarabien": "🇸🇦", "Uruguay": "🇺🇾", "Iran": "🇮🇷", "Nya Zeeland": "🇳🇿",
+            "Frankrike": "🇫🇷", "Senegal": "🇸🇳", "Norge": "🇳🇴", "Argentina": "🇦🇷",
+            "Algeriet": "🇩🇿", "Österrike": "🇦🇹", "Jordanien": "🇯🇴", "Portugal": "🇵🇹",
+            "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Kroatien": "🇭🇷", "Ghana": "🇬🇭", "Panama": "🇵🇦",
+            "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴"
+        };
+        const f = (team) => flags[team] ? flags[team] + ' ' : '🌍 '; // Returnerar flagga eller jordglob
+
         const groupLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
         let currentWizardIndex = 0; 
-        let currentGroupTeams = []; // Håller koll på vilka 4 lag som är i aktuell grupp
+        let currentGroupTeams = []; 
         let selectedFirst = null;
         let selectedSecond = null;
 
-        // Flik-logik
         window.switchTab = function(tabId, btnElement) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             btnElement.classList.add('active');
-            
-            if(tabId === 'wizard-tab' && allMatchesData.length > 0) {
-                loadWizardGroup(currentWizardIndex);
-            }
+            if(tabId === 'wizard-tab' && allMatchesData.length > 0) loadWizardGroup(currentWizardIndex);
         };
 
-        // Admin Toggle
         document.getElementById('toggle-admin-btn').addEventListener('click', () => {
             adminModeActive = !adminModeActive;
             const container = document.getElementById('main-container');
             const adminPanel = document.getElementById('admin-panel');
-            
             if (adminModeActive) {
                 container.classList.add('admin-mode-active');
                 adminPanel.style.display = 'block';
@@ -242,7 +247,6 @@
         async function getMatches() {
             const matchesRef = collection(db, "matches");
             const matchesSnapshot = await getDocs(matchesRef);
-            
             if (!matchesSnapshot.empty) {
                 allMatchesData = matchesSnapshot.docs.map(doc => doc.data());
                 renderGroupTables(allMatchesData); 
@@ -251,26 +255,21 @@
         }
 
         // ==========================================
-        // WIZARD: TIPPA GRUPPSPEL (MAGIN)
+        // WIZARD
         // ==========================================
         window.loadWizardGroup = function(index) {
             const letter = groupLetters[index];
             document.getElementById('wizard-title').textContent = `Grupp ${letter}`;
             document.getElementById('wizard-progress').style.width = `${((index + 1) / 12) * 100}%`;
-            
-            selectedFirst = null;
-            selectedSecond = null;
+            selectedFirst = null; selectedSecond = null;
 
             const groupMatches = allMatchesData.filter(m => m.stage === `Grupp ${letter}`);
-            
-            // Hämta de 4 lagen
             let teams = new Set();
             groupMatches.forEach(m => { teams.add(m.homeTeam); teams.add(m.awayTeam); });
             currentGroupTeams = Array.from(teams);
             
             renderTeamSelectors();
             
-            // Rendera input-fält för de 6 matcherna
             const container = document.getElementById('wizard-matches');
             container.innerHTML = '';
             
@@ -279,21 +278,19 @@
                     <div class="match-card">
                         <div class="match-header"><span>${m.date}</span></div>
                         <div class="match-teams">
-                            <span class="team-name home" id="wizNameHome-${m.id}">${m.homeTeam}</span>
+                            <span class="team-name home" id="wizNameHome-${m.id}">${f(m.homeTeam)}${m.homeTeam}</span>
                             <div class="score-input-group">
-                                <input type="number" id="wizHome-${m.id}" class="score-input" placeholder="-" oninput="updateWizardTable()">
-                                <span style="color:#aaa; font-weight:bold;">:</span> 
-                                <input type="number" id="wizAway-${m.id}" class="score-input" placeholder="-" oninput="updateWizardTable()">
+                                <input type="number" min="0" id="wizHome-${m.id}" class="score-input" placeholder="-" oninput="updateWizardTable()">
+                                <span style="color:#aaa; font-weight:bold; margin: 0 2px;">:</span> 
+                                <input type="number" min="0" id="wizAway-${m.id}" class="score-input" placeholder="-" oninput="updateWizardTable()">
                             </div>
-                            <span class="team-name away" id="wizNameAway-${m.id}">${m.awayTeam}</span>
+                            <span class="team-name away" id="wizNameAway-${m.id}">${f(m.awayTeam)}${m.awayTeam}</span>
                         </div>
                     </div>`;
             });
-            
-            updateWizardTable(); // Skapar den tomma tabellen först
+            updateWizardTable(); 
         };
 
-        // Rendera Klickbara Lag-chips
         function renderTeamSelectors() {
             const container = document.getElementById('wizard-team-selectors');
             container.innerHTML = '';
@@ -301,60 +298,40 @@
                 let rankClass = '';
                 if(team === selectedFirst) rankClass = 'rank-1';
                 else if(team === selectedSecond) rankClass = 'rank-2';
-                
-                container.innerHTML += `<div class="team-chip ${rankClass}" onclick="toggleTeamSelection('${team}')">${team}</div>`;
+                container.innerHTML += `<div class="team-chip ${rankClass}" onclick="toggleTeamSelection('${team}')">${f(team)}${team}</div>`;
             });
         }
 
-        // Logik för att klicka på lagen
         window.toggleTeamSelection = function(team) {
-            if (selectedFirst === team) { selectedFirst = null; } // Avmarkera 1:a
-            else if (selectedSecond === team) { selectedSecond = null; } // Avmarkera 2:a
-            else if (!selectedFirst) { selectedFirst = team; } // Sätt som 1:a
-            else if (!selectedSecond) { selectedSecond = team; } // Sätt som 2:a
+            if (selectedFirst === team) { selectedFirst = null; } 
+            else if (selectedSecond === team) { selectedSecond = null; } 
+            else if (!selectedFirst) { selectedFirst = team; } 
+            else if (!selectedSecond) { selectedSecond = team; }
             renderTeamSelectors();
         };
 
-        // Slumpa resultat baserat på val (Smart Algoritm)
         window.autoFillGroup = function() {
             if (!selectedFirst || !selectedSecond) return alert("Klicka på två lag ovanför för att bestämma 1:an och 2:an först!");
-
             const letter = groupLetters[currentWizardIndex];
             const groupMatches = allMatchesData.filter(m => m.stage === `Grupp ${letter}`);
             
-            // Hjälpfunktion för att slumpa ett resultat [VinnareMål, FörlorareMål]
-            const getRandomWin = () => {
-                const w = Math.floor(Math.random() * 3) + 1; // Vinnaren gör 1-3 mål
-                const l = Math.floor(Math.random() * w);     // Förloraren gör 0 till (w-1) mål
-                return [w, l];
-            };
-            const getRandomDraw = () => {
-                const d = Math.floor(Math.random() * 2); // 0-0 eller 1-1
-                return [d, d];
-            };
+            const getRandomWin = () => { const w = Math.floor(Math.random() * 3) + 1; const l = Math.floor(Math.random() * w); return [w, l]; };
+            const getRandomDraw = () => { const d = Math.floor(Math.random() * 2); return [d, d]; };
 
             groupMatches.forEach(m => {
                 let hScore = 0; let aScore = 0;
-                
-                // 1. Ettan spelar (Ettan vinner alltid)
                 if (m.homeTeam === selectedFirst) { [hScore, aScore] = getRandomWin(); }
                 else if (m.awayTeam === selectedFirst) { [aScore, hScore] = getRandomWin(); }
-                
-                // 2. Tvåan spelar (och matchen är INTE mot ettan, för den fångades ovan)
                 else if (m.homeTeam === selectedSecond) { [hScore, aScore] = getRandomWin(); }
                 else if (m.awayTeam === selectedSecond) { [aScore, hScore] = getRandomWin(); }
-                
-                // 3. Lag 3 vs Lag 4 spelar (Slumpa oavgjort för att de ska få bottenpoäng)
                 else { [hScore, aScore] = getRandomDraw(); }
 
                 document.getElementById(`wizHome-${m.id}`).value = hScore;
                 document.getElementById(`wizAway-${m.id}`).value = aScore;
             });
-            
-            updateWizardTable(); // Uppdatera minitabell + färgkoder
+            updateWizardTable(); 
         };
 
-        // Uppdaterar minitabellen OCH färgerna på matchkorten i realtid
         window.updateWizardTable = function() {
             const letter = groupLetters[currentWizardIndex];
             const groupMatches = allMatchesData.filter(m => m.stage === `Grupp ${letter}`);
@@ -364,98 +341,61 @@
             groupMatches.forEach(m => {
                 const hInput = document.getElementById(`wizHome-${m.id}`).value;
                 const aInput = document.getElementById(`wizAway-${m.id}`).value;
-                
                 const hText = document.getElementById(`wizNameHome-${m.id}`);
                 const aText = document.getElementById(`wizNameAway-${m.id}`);
                 
-                // Återställ färger
-                hText.className = "team-name home";
-                aText.className = "team-name away";
+                hText.className = "team-name home"; aText.className = "team-name away";
 
                 if (hInput !== '' && aInput !== '') {
                     const h = parseInt(hInput); const a = parseInt(aInput);
-                    
-                    // Färgkodning av vinnare
                     if(h > a) { hText.classList.add('is-winner'); aText.classList.add('is-loser'); }
                     else if(a > h) { aText.classList.add('is-winner'); hText.classList.add('is-loser'); }
                     else { hText.classList.add('is-draw'); aText.classList.add('is-draw'); }
 
-                    // Tabellmatte
                     let ht = tableData[m.homeTeam]; let at = tableData[m.awayTeam];
-                    ht.pld++; at.pld++;
-                    ht.gf += h; at.gf += a;
-                    ht.ga += a; at.ga += h;
-                    ht.gd = ht.gf - ht.ga; at.gd = at.gf - at.ga;
-                    
-                    if (h > a) { ht.w++; ht.pts += 3; at.l++; }
-                    else if (h < a) { at.w++; at.pts += 3; ht.l++; }
-                    else { ht.d++; at.d++; ht.pts += 1; at.pts += 1; }
+                    ht.pld++; at.pld++; ht.gf += h; at.gf += a; ht.ga += a; at.ga += h; ht.gd = ht.gf - ht.ga; at.gd = at.gf - at.ga;
+                    if (h > a) { ht.w++; ht.pts += 3; at.l++; } else if (h < a) { at.w++; at.pts += 3; ht.l++; } else { ht.d++; at.d++; ht.pts += 1; at.pts += 1; }
                 }
             });
 
-            // Sortera och rita minitabell
             let sortedTeams = Object.values(tableData).sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
-            
-            let html = `<table class="group-table" style="background:transparent;">
-                <thead><tr><th>Lag</th><th>S</th><th>+/-</th><th>P</th></tr></thead><tbody>`;
+            let html = `<table class="group-table" style="background:transparent;"><thead><tr><th>Lag</th><th>S</th><th>+/-</th><th>P</th></tr></thead><tbody>`;
             sortedTeams.forEach((t, i) => {
-                let rowBg = '';
-                if(i===0) rowBg = 'background-color: rgba(40, 167, 69, 0.1);';
-                if(i===1) rowBg = 'background-color: rgba(23, 162, 184, 0.05);';
-                html += `<tr style="${rowBg}"><td>${t.name}</td><td>${t.pld}</td><td>${t.gd > 0 ? '+'+t.gd : t.gd}</td><td><strong>${t.pts}</strong></td></tr>`;
+                let rowBg = i===0 ? 'background-color: rgba(40, 167, 69, 0.1);' : (i===1 ? 'background-color: rgba(23, 162, 184, 0.05);' : '');
+                html += `<tr style="${rowBg}"><td style="padding-left: 5px;">${f(t.name)}${t.name}</td><td>${t.pld}</td><td>${t.gd > 0 ? '+'+t.gd : t.gd}</td><td><strong>${t.pts}</strong></td></tr>`;
             });
             html += `</tbody></table>`;
             document.getElementById('wizard-live-table').innerHTML = html;
         };
 
         window.nextWizardGroup = function() {
-            if (currentWizardIndex < 11) {
-                currentWizardIndex++;
-                loadWizardGroup(currentWizardIndex);
-                window.scrollTo(0,0);
-            } else {
-                alert("Fantastiskt! Du har tippat hela gruppspelet.");
-                switchTab('start-tab', document.querySelectorAll('.tab-btn')[0]);
-            }
+            if (currentWizardIndex < 11) { currentWizardIndex++; loadWizardGroup(currentWizardIndex); window.scrollTo(0,0); } 
+            else { alert("Fantastiskt! Du har tippat hela gruppspelet."); switchTab('start-tab', document.querySelectorAll('.tab-btn')[0]); }
         };
-
-        window.prevWizardGroup = function() {
-            if (currentWizardIndex > 0) {
-                currentWizardIndex--;
-                loadWizardGroup(currentWizardIndex);
-            }
-        };
-
-        window.saveAndNextWizardGroup = async function() {
-            nextWizardGroup(); // Går vidare (databas-sparning fixar vi i nästa steg)
-        };
+        window.prevWizardGroup = function() { if (currentWizardIndex > 0) { currentWizardIndex--; loadWizardGroup(currentWizardIndex); } };
+        window.saveAndNextWizardGroup = async function() { nextWizardGroup(); };
 
         // ==========================================
-        // OFFICIELLA TABELLER & MATCHER (BEHÅLLT FRÅN INNAN)
+        // OFFICIELLA TABELLER & MATCHER
         // ==========================================
         function renderGroupTables(matches) {
             const container = document.getElementById('tables-container');
             container.innerHTML = '';
             const groups = { A:[], B:[], C:[], D:[], E:[], F:[], G:[], H:[], I:[], J:[], K:[], L:[] };
-            const groupMatches = matches.filter(m => m.id <= 72);
-
-            groupMatches.forEach(m => {
+            matches.filter(m => m.id <= 72).forEach(m => {
                 const groupLetter = m.stage.replace('Grupp ', '');
                 if(!groups[groupLetter]) return;
-                [m.homeTeam, m.awayTeam].forEach(team => {
-                    if (!groups[groupLetter].find(t => t.name === team)) groups[groupLetter].push({ name: team, played: 0, win: 0, draw: 0, loss: 0, gf: 0, ga: 0, gd: 0, points: 0 });
-                });
+                [m.homeTeam, m.awayTeam].forEach(team => { if (!groups[groupLetter].find(t => t.name === team)) groups[groupLetter].push({ name: team, played: 0, win: 0, draw: 0, loss: 0, gf: 0, ga: 0, gd: 0, points: 0 }); });
                 if (m.homeScore !== null && m.awayScore !== null) {
                     let ht = groups[groupLetter].find(t => t.name === m.homeTeam); let at = groups[groupLetter].find(t => t.name === m.awayTeam);
                     ht.played++; at.played++; ht.gf+=m.homeScore; at.gf+=m.awayScore; ht.ga+=m.awayScore; at.ga+=m.homeScore; ht.gd=ht.gf-ht.ga; at.gd=at.gf-at.ga;
                     if (m.homeScore > m.awayScore) { ht.win++; ht.points+=3; at.loss++; } else if (m.homeScore < m.awayScore) { at.win++; at.points+=3; ht.loss++; } else { ht.draw++; at.draw++; ht.points+=1; at.points+=1; }
                 }
             });
-
             Object.keys(groups).forEach(letter => {
                 let teams = groups[letter].sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
                 let tableHTML = `<div class="group-table-card"><div class="group-table-header">Grupp ${letter}</div><table class="group-table"><thead><tr><th>Lag</th><th>S</th><th>V</th><th>O</th><th>F</th><th>+/-</th><th>P</th></tr></thead><tbody>`;
-                teams.forEach(t => tableHTML += `<tr><td>${t.name}</td><td>${t.played}</td><td>${t.win}</td><td>${t.draw}</td><td>${t.loss}</td><td>${t.gd > 0 ? '+'+t.gd : t.gd}</td><td><strong>${t.points}</strong></td></tr>`);
+                teams.forEach(t => tableHTML += `<tr><td>${f(t.name)}${t.name}</td><td>${t.played}</td><td>${t.win}</td><td>${t.draw}</td><td>${t.loss}</td><td>${t.gd > 0 ? '+'+t.gd : t.gd}</td><td><strong>${t.points}</strong></td></tr>`);
                 tableHTML += `</tbody></table></div>`; container.innerHTML += tableHTML;
             });
         }
@@ -463,39 +403,33 @@
         function renderMatches(matches) {
             const container = document.getElementById('matches-container');
             container.innerHTML = '';
-            matches.sort((a, b) => a.id - b.id);
-            
-            matches.forEach(match => {
+            matches.sort((a, b) => a.id - b.id).forEach(match => {
                 let adminHTML = "";
                 if (isSuperUser) {
-                    // FIX för clearMatch: Konverterar null till tomma strängar för input-fälten
                     const hVal = match.homeScore !== null ? match.homeScore : '';
                     const aVal = match.awayScore !== null ? match.awayScore : '';
-                    
                     adminHTML = `
                         <div class="admin-view">
                             <input type="text" id="homeName-${match.id}" class="admin-input" value="${match.homeTeam}">
                             <div class="score-input-group">
-                                <input type="number" id="homeScore-${match.id}" class="score-input" value="${hVal}"> - 
-                                <input type="number" id="awayScore-${match.id}" class="score-input" value="${aVal}">
+                                <input type="number" min="0" id="homeScore-${match.id}" class="score-input" value="${hVal}"> - 
+                                <input type="number" min="0" id="awayScore-${match.id}" class="score-input" value="${aVal}">
                             </div>
                             <input type="text" id="awayName-${match.id}" class="admin-input" value="${match.awayTeam}">
                         </div>
                         <div class="admin-controls">
                             <button class="admin-btn" onclick="updateMatch(${match.id})">Spara Resultat</button>
-                            <button class="btn-clear" onclick="clearMatch(${match.id})">Rensa Resultat</button>
-                        </div>
-                    `;
+                            <button class="btn-clear" onclick="clearMatch(${match.id})">Rensa</button>
+                        </div>`;
                 }
-
                 container.innerHTML += `
                     <div class="match-card">
                         <div class="match-header"><span>Match ${match.id} | ${match.stage}</span><span>${match.date}</span></div>
                         <div class="match-teams">
                             <div class="normal-view" style="display: flex; justify-content: space-between; width: 100%;">
-                                <span>${match.homeTeam}</span>
-                                <span>${match.homeScore !== null ? match.homeScore : '-'} : ${match.awayScore !== null ? match.awayScore : '-'}</span>
-                                <span>${match.awayTeam}</span>
+                                <span class="team-name home ${match.homeScore > match.awayScore ? 'is-winner' : (match.homeScore < match.awayScore ? 'is-loser' : '')}">${f(match.homeTeam)}${match.homeTeam}</span>
+                                <span style="margin: 0 10px;">${match.homeScore !== null ? match.homeScore : '-'} : ${match.awayScore !== null ? match.awayScore : '-'}</span>
+                                <span class="team-name away ${match.awayScore > match.homeScore ? 'is-winner' : (match.awayScore < match.homeScore ? 'is-loser' : '')}">${f(match.awayTeam)}${match.awayTeam}</span>
                             </div>
                             ${adminHTML}
                         </div>
@@ -504,29 +438,23 @@
         }
 
         window.updateMatch = async function(matchId) {
-            const homeTeam = document.getElementById(`homeName-${matchId}`).value;
-            const awayTeam = document.getElementById(`awayName-${matchId}`).value;
             const homeScoreRaw = document.getElementById(`homeScore-${matchId}`).value;
             const awayScoreRaw = document.getElementById(`awayScore-${matchId}`).value;
-
-            const homeScore = homeScoreRaw === '' ? null : parseInt(homeScoreRaw);
-            const awayScore = awayScoreRaw === '' ? null : parseInt(awayScoreRaw);
-
             try {
-                const matchRef = doc(db, "matches", matchId.toString());
-                await updateDoc(matchRef, { homeTeam, awayTeam, homeScore, awayScore });
-                alert(`Match ${matchId} sparad!`);
+                await updateDoc(doc(db, "matches", matchId.toString()), { 
+                    homeTeam: document.getElementById(`homeName-${matchId}`).value, 
+                    awayTeam: document.getElementById(`awayName-${matchId}`).value, 
+                    homeScore: homeScoreRaw === '' ? null : parseInt(homeScoreRaw), 
+                    awayScore: awayScoreRaw === '' ? null : parseInt(awayScoreRaw) 
+                });
                 getMatches(); 
             } catch (error) { alert("Fel vid sparning!"); }
         };
 
         window.clearMatch = async function(matchId) {
             if(!confirm("Vill du verkligen rensa resultatet för denna match?")) return;
-            try {
-                const matchRef = doc(db, "matches", matchId.toString());
-                await updateDoc(matchRef, { homeScore: null, awayScore: null });
-                getMatches(); 
-            } catch (error) { alert("Kunde inte rensa matchen."); }
+            try { await updateDoc(doc(db, "matches", matchId.toString()), { homeScore: null, awayScore: null }); getMatches(); } 
+            catch (error) { alert("Kunde inte rensa matchen."); }
         };
 
         document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
