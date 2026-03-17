@@ -3,23 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - VM-tips 2026</title>
+    <title>VM-tips 2026 - Dashboard</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background-color: #f0f2f5; color: #333; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background-color: #f0f2f5; color: #333; }
         .navbar { background-color: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-        .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
         .btn { background-color: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn:hover { background-color: #218838; }
         .btn-logout { background-color: #dc3545; }
+        
+        /* God Mode Styles */
+        #admin-panel { display: none; background: #fff3cd; border: 2px solid #ffeeba; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .admin-header { color: #856404; margin-top: 0; display: flex; justify-content: space-between; align-items: center; }
+        .admin-btn { background-color: #ffc107; color: #000; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        
+        /* Match Cards */
         .match-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
-        .match-header { font-size: 0.9rem; color: #666; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .match-header { font-size: 0.9rem; color: #666; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: flex; justify-content: space-between; }
         .match-teams { display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; }
-        .bet-input-group { display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
-        .bet-input-group input { width: 40px; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
-        .colleague-tips { background: #e9ecef; padding: 10px; border-radius: 8px; font-size: 0.9rem; }
-        .tip-group { margin-bottom: 5px; }
-        .tooltip-text { text-decoration: underline dotted; cursor: help; color: #0056b3; }
-        .error-screen { background: white; padding: 2rem; border-radius: 12px; text-align: center; margin-top: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        
+        /* Inputs for Admin */
+        .admin-input { width: 120px; padding: 5px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        .score-input { width: 40px; padding: 5px; text-align: center; border: 2px solid #28a745; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -30,22 +35,27 @@
             <button id="logout-btn" class="btn btn-logout" style="margin-left: 15px;">Logga ut</button>
         </div>
     </nav>
-    <div class="container" id="main-content">
-        <h3>Kommande Matcher (Champions League Test)</h3>
-        <div id="matches-container"><p>Kontrollerar databas...</p></div>
+    
+    <div class="container">
+        <div id="admin-panel">
+            <h3 class="admin-header">👑 GOD MODE (Admin) <button id="init-db-btn" class="admin-btn">Skapa 104 matcher i databasen</button></h3>
+            <p style="margin: 0; font-size: 0.9em;">Här inne kan du ändra lagnamn (t.ex. byta ut TBD mot riktiga lag) och mata in officiella slutresultat.</p>
+        </div>
+
+        <h3>Alla Matcher</h3>
+        <div id="matches-container"><p>Laddar databasen...</p></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-        
-        // FOOTBALL_API_KEY är borttagen härifrån
+        import { getFirestore, doc, collection, getDocs, writeBatch, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         import { firebaseConfig } from './config.js';
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        let isAdmin = false;
 
         onAuthStateChanged(auth, (user) => {
             if (!user || !user.email.toLowerCase().endsWith('@nyamunken.se')) {
@@ -53,65 +63,29 @@
                 return;
             }
             document.getElementById('user-name').textContent = user.displayName || user.email;
+            
+            // GOD MODE KONTROLL
+            if (user.email.toLowerCase() === 'karl.tornered@nyamunken.se') {
+                isAdmin = true;
+                document.getElementById('admin-panel').style.display = 'block';
+            }
+            
             getMatches();
         });
 
+        // ==========================================
+        // 1. HÄMTA OCH RENDERA MATCHER
+        // ==========================================
         async function getMatches() {
             const matchesRef = collection(db, "matches");
             const matchesSnapshot = await getDocs(matchesRef);
             
             if (!matchesSnapshot.empty) {
-                console.log("Hämtade matcher från Firestore!");
                 const dbMatches = matchesSnapshot.docs.map(doc => doc.data());
                 renderMatches(dbMatches);
             } else {
-                console.log("Databasen är tom. Anropar Cloudflare Proxy...");
-                fetchMatchesFromAPI();
-            }
-        }
-
-       async function fetchMatchesFromAPI() {
-            const container = document.getElementById('matches-container');
-            container.innerHTML = `<p>Databasen är tom. Letar efter VM-matcher via TheSportsDB...</p>`;
-
-            // Samma Cloudflare Worker-URL som innan
-            const workerUrl = 'https://vmtips-proxy.karl-tornered.workers.dev/';
-
-            try {
-                const response = await fetch(workerUrl);
-                const rawText = await response.text(); 
-                
-                if (!response.ok) {
-                    throw new Error(`Serverfel ${response.status}: ${rawText}`);
-                }
-                
-                const data = JSON.parse(rawText);
-
-                // TheSportsDB returnerar en array som heter "events". Om det inte finns matcher blir den 'null'
-                const upcomingMatches = data.events ? data.events.slice(0, 3) : [];
-                
-                if (upcomingMatches.length === 0) {
-                    container.innerHTML = `<p>Hittade inga kommande matcher just nu. Spelschemat kanske inte har släppts i gratis-API:et än!</p>`;
-                    return;
-                }
-
-                const batch = writeBatch(db);
-                upcomingMatches.forEach(match => {
-                    // Match-ID heter idEvent här
-                    const matchRef = doc(db, "matches", match.idEvent.toString());
-                    batch.set(matchRef, match);
-                });
-                await batch.commit();
-                
-                console.log("Matcher hämtade via TheSportsDB och sparade till Firestore!");
-                renderMatches(upcomingMatches);
-
-            } catch (error) {
-                console.error(error);
-                container.innerHTML = `<div style="background: #ffe6e6; padding: 15px; border-radius: 8px; border: 1px solid red;">
-                    <p style="color: red; font-weight: bold; margin-top: 0;">Kunde inte hämta matcher.</p>
-                    <p style="font-family: monospace; font-size: 0.9em; word-break: break-all;">Detaljerat fel: ${error.message}</p>
-                </div>`;
+                document.getElementById('matches-container').innerHTML = 
+                    isAdmin ? `<p>Databasen är tom. Klicka på 'Skapa 104 matcher' i God Mode-panelen!</p>` : `<p>Databasen byggs upp, kom tillbaka snart!</p>`;
             }
         }
 
@@ -119,62 +93,104 @@
             const container = document.getElementById('matches-container');
             container.innerHTML = '';
             
+            // Sortera matcherna på ID (Match 1 till 104)
+            matches.sort((a, b) => a.id - b.id);
+            
             matches.forEach(match => {
-                // Vi slår ihop deras datum och tid för att kunna formatera det svenskt
-                let matchDate = "Tid ej fastställd";
-                if (match.dateEvent && match.strTime) {
-                    matchDate = new Date(`${match.dateEvent}T${match.strTime}`).toLocaleString('sv-SE', { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                // Om du är admin visas textfält för att ändra namn och resultat
+                if (isAdmin) {
+                    container.innerHTML += `
+                        <div class="match-card" style="border-left: 5px solid #ffc107;">
+                            <div class="match-header"><span>Match ${match.id} | ${match.stage}</span></div>
+                            <div class="match-teams">
+                                <input type="text" id="homeName-${match.id}" class="admin-input" value="${match.homeTeam}">
+                                <div>
+                                    <input type="number" id="homeScore-${match.id}" class="score-input" placeholder="0" value="${match.homeScore !== null ? match.homeScore : ''}">
+                                    -
+                                    <input type="number" id="awayScore-${match.id}" class="score-input" placeholder="0" value="${match.awayScore !== null ? match.awayScore : ''}">
+                                </div>
+                                <input type="text" id="awayName-${match.id}" class="admin-input" value="${match.awayTeam}">
+                            </div>
+                            <div style="text-align: center;">
+                                <button class="admin-btn" onclick="updateMatch(${match.id})">Spara ändringar för Match ${match.id}</button>
+                            </div>
+                        </div>`;
+                } else {
+                    // Vanliga användare ser bara detta (här lägger vi in tipp-funktionen i nästa steg)
+                    container.innerHTML += `
+                        <div class="match-card">
+                            <div class="match-header"><span>Match ${match.id} | ${match.stage}</span></div>
+                            <div class="match-teams">
+                                <span>${match.homeTeam}</span>
+                                <span>${match.homeScore !== null ? match.homeScore : '-'} : ${match.awayScore !== null ? match.awayScore : '-'}</span>
+                                <span>${match.awayTeam}</span>
+                            </div>
+                        </div>`;
                 }
-                
-                const fixtureId = match.idEvent;
-
-                container.innerHTML += `
-                    <div class="match-card">
-                        <div class="match-header">${matchDate}</div>
-                        <div class="match-teams">
-                            <span>${match.strHomeTeam}</span>
-                            <span>vs</span>
-                            <span>${match.strAwayTeam}</span>
-                        </div>
-                        <div class="bet-input-group">
-                            <label>Ditt tips:</label>
-                            <input type="number" min="0" id="home-${fixtureId}" placeholder="0">
-                            <span>-</span>
-                            <input type="number" min="0" id="away-${fixtureId}" placeholder="0">
-                            <button class="btn" onclick="saveTip(${fixtureId})">Spara rad</button>
-                        </div>
-                        <div class="colleague-tips" id="tips-${fixtureId}">
-                            <h4>Kollegornas tips</h4>
-                            <p>Laddar...</p>
-                        </div>
-                    </div>`;
             });
         }
-        
-        window.saveTip = async function(matchId) {
-            const homeGoals = document.getElementById(`home-${matchId}`).value;
-            const awayGoals = document.getElementById(`away-${matchId}`).value;
-            
-            if (homeGoals === '' || awayGoals === '') return alert("Fyll i båda fält!");
 
-            const currentUser = auth.currentUser;
-            if (!currentUser) return alert("Inloggningsfel, ladda om sidan.");
-            
-            const tipRef = doc(db, "matches", matchId.toString(), "tips", currentUser.uid);
-            
+        // ==========================================
+        // 2. ADMIN-FUNKTIONER (GOD MODE)
+        // ==========================================
+        
+        // Spara resultat/lagnamn (Görs tillgänglig globalt)
+        window.updateMatch = async function(matchId) {
+            const homeTeam = document.getElementById(`homeName-${matchId}`).value;
+            const awayTeam = document.getElementById(`awayName-${matchId}`).value;
+            const homeScoreRaw = document.getElementById(`homeScore-${matchId}`).value;
+            const awayScoreRaw = document.getElementById(`awayScore-${matchId}`).value;
+
+            const homeScore = homeScoreRaw === '' ? null : parseInt(homeScoreRaw);
+            const awayScore = awayScoreRaw === '' ? null : parseInt(awayScoreRaw);
+
             try {
-                await setDoc(tipRef, {
-                    user: currentUser.displayName || currentUser.email.split('@')[0], // En liten snyggare fallback om displayName saknas
-                    email: currentUser.email,
-                    home: parseInt(homeGoals),
-                    away: parseInt(awayGoals)
-                });
-                alert(`Ditt tips ${homeGoals}-${awayGoals} är sparat!`);
+                const matchRef = doc(db, "matches", matchId.toString());
+                await updateDoc(matchRef, { homeTeam, awayTeam, homeScore, awayScore });
+                alert(`Match ${matchId} uppdaterad!`);
             } catch (error) {
-                console.error("Kunde inte spara tipset: ", error);
-                alert("Något gick fel när tipset skulle sparas.");
+                console.error("Kunde inte uppdatera:", error);
+                alert("Fel vid sparning!");
             }
         };
+
+        // Generera hela VM-strukturen (104 matcher)
+        document.getElementById('init-db-btn').addEventListener('click', async () => {
+            if (!confirm("Är du säker? Detta raderar/skriver över befintliga matcher och skapar 104 nya blanka matcher!")) return;
+            
+            document.getElementById('init-db-btn').textContent = "Skapar databas...";
+            const batch = writeBatch(db);
+            
+            // FIFA 2026: 72 gruppmatcher (Match 1-72), 16 sextondelsfinaler (73-88), 8 åttondelar (89-96), 4 kvartsfinaler (97-100), 2 semi (101-102), brons (103), final (104)
+            for (let i = 1; i <= 104; i++) {
+                let stage = "Gruppspel";
+                if (i > 72) stage = "Sextondelsfinal";
+                if (i > 88) stage = "Åttondelsfinal";
+                if (i > 96) stage = "Kvartsfinal";
+                if (i > 100) stage = "Semifinal";
+                if (i === 103) stage = "Bronsmatch";
+                if (i === 104) stage = "FINAL";
+
+                const matchRef = doc(db, "matches", i.toString());
+                batch.set(matchRef, {
+                    id: i,
+                    stage: stage,
+                    homeTeam: "TBD",
+                    awayTeam: "TBD",
+                    homeScore: null,
+                    awayScore: null
+                });
+            }
+            
+            try {
+                await batch.commit();
+                alert("104 matcher skapade framgångsrikt i databasen!");
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+                alert("Kunde inte initiera databasen.");
+            }
+        });
 
         document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
     </script>
